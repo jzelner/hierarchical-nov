@@ -120,7 +120,16 @@ model {
       //Log-likelihood for infections
       real c_ex = c_lambda[c,i-1];
       real d_ex = lambda[c,i];
-      target += Ymat[c,i]*(log(c_ex)-d_ex);
+      real ll;
+      if (i > 2) {
+        real c_ex_1 = c_lambda[c, i-2];
+        real d_ex_1 = lambda[c, i-1];
+        ll = log_sum_exp(log(0.5) + log(c_ex)-d_ex, log(0.5) + log(c_ex_1)-d_ex_1);
+      } else {
+        ll = log(c_ex)-d_ex;
+      }
+
+      target += Ymat[c,i]*ll;
     }
   }
 
