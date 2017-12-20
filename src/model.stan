@@ -51,7 +51,6 @@ transformed parameters {
   vector<lower=0, upper=1>[T] inf_day; //Distribution of infectiousness by day
   vector<lower=0>[C] beta = exp(log_beta);
   vector[T] f_day;
-  print(f_day)
   
 
   //Pre-calculate proportion of infectiousness on each day since onset
@@ -77,7 +76,6 @@ transformed parameters {
   //Now calculate cumulative force of infection for individuals
   //infected on each day
   for (c in 1:C) {
-    //    print(c_lambda[c])
     c_lambda[c] = cumulative_sum(lambda[c]);
   }
     //Construct correlation matrix for age GP
