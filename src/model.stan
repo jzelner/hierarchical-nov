@@ -30,6 +30,7 @@ transformed data {
     S[i] = P[i] - sum(Ymat[i]);
   }
 
+
 }
 
 parameters {
@@ -42,6 +43,10 @@ parameters {
   real<lower=0> day_alpha;
   real<lower=0> day_rho;
   vector[T] day_eta;
+
+  //Noise pars
+  real<lower=0> day_sigma;
+  vector[T-1] day_incr_s;
 }
 
 transformed parameters {
@@ -51,7 +56,12 @@ transformed parameters {
   vector<lower=0, upper=1>[T] inf_day; //Distribution of infectiousness by day
   vector<lower=0>[C] beta = exp(log_beta);
   vector[T] f_day;
-  
+  vector[T] day_incr;
+
+  day_incr[1] = 0;
+  for (i in 2:T) {
+    day_incr[i] = day_incr_s[i-1];
+  }
 
   //Pre-calculate proportion of infectiousness on each day since onset
   inf_day[1] = exponential_cdf(1, gamma);
@@ -64,8 +74,8 @@ transformed parameters {
     for (tb in 1:T) {
       for (te in tb:T) {
         int dayindex = te-tb+1;
-        real b_t = exp(log_beta[c]);// + f_day[te]);
-        real a_t = alpha;
+        real b_t = exp(log_beta[c] + day_incr[te]);
+        real a_t = exp(log(alpha)+ day_incr[te]);
         real incamp = (b_t/P[c])*Ymat[c,tb]*inf_day[dayindex];
         real outcamp = a_t * ((AY[tb]-Ymat[c,tb])*inf_day[dayindex]);
         lambda[c,te] = lambda[c, te] + ((incamp + outcamp));
@@ -102,6 +112,8 @@ model {
   day_alpha ~ normal(0, 1);
   day_eta ~ normal(0, 1);
 
+  day_incr_s ~ normal(0, day_sigma);
+  day_sigma ~ normal(0, 2);
   //Model pars
   log_beta_sigma ~ normal(0, 1);
   log_beta_mu ~ normal(0, 1);
@@ -109,24 +121,26 @@ model {
   alpha ~ normal(0, 1);
   //Sample log-betas from normal distribution
   log_beta ~ normal(log_beta_mu, log_beta_sigma);
-
   //Iterate over camps
   for (c in 1:C) {
     //Log-likelihood for survival
     target += -S[c]*c_lambda[c,T];
     for (i in 2:T) {
       //Log-likelihood for infections
-      real c_ex = c_lambda[c,i-1];
-      real d_ex = lambda[c,i];
+      real c_ex = 0;
+      real d_ex = lambda[c,i-1];
       real ll;
       if (i > 2) {
-        real c_ex_1 = c_lambda[c, i-2];
-        real d_ex_1 = lambda[c, i-1];
-        ll = log_sum_exp(log(0.5) + log(c_ex)-d_ex, log(0.5) + log(c_ex_1)-d_ex_1);
-      } else {
-        ll = log(c_ex)-d_ex;
+        c_ex = c_lambda[c,i-2];
       }
 
+      if (i > 3) {
+        real c_ex_1 = c_lambda[c, i-3];
+        real d_ex_1 = lambda[c, i-2];
+        ll = log_sum_exp(log(0.5) + log(d_ex)-c_ex, log(0.5) + log(d_ex_1)-c_ex_1);
+      } else {
+        ll = log(d_ex)-c_ex;
+      }
       target += Ymat[c,i]*ll;
     }
   }

@@ -32,6 +32,9 @@ data_in <- list(C = nrow(camp_id),
                 Y = od$cases
                 )
 
+
+saveRDS(data_in, "output/nov_model_input.Rds")
+
 m <- stan("src/model.stan",
           data = data_in,
           iter = 2000,
