@@ -37,7 +37,7 @@ parameters {
   real log_beta_mu; //Avg log beta
   vector[C] log_beta; //Realized log betas
   real<lower=0> log_beta_sigma; //Variance of log betas
-  real<lower=0> alpha; //Per-capita exposure to individuals outside camp
+  real log_alpha; //Per-capita exposure to individuals outside camp
   real<lower=0> gamma; //Shape of infectious period
   //GP pars
   real<lower=0> day_alpha;
@@ -74,10 +74,10 @@ transformed parameters {
     for (tb in 1:T) {
       for (te in tb:T) {
         int dayindex = te-tb+1;
-        real b_t = exp(log_beta[c] + day_incr[te]);
-        real a_t = exp(log(alpha)+ day_incr[te]);
+        real b_t = exp(log_alpha + log_beta_mu + day_incr[tb]);
+        real a_t = exp(log_alpha + day_incr[tb]);
         real incamp = (b_t/P[c])*Ymat[c,tb]*inf_day[dayindex];
-        real outcamp = a_t * ((AY[tb]-Ymat[c,tb])*inf_day[dayindex]);
+        real outcamp = (a_t/sum(P)) * ((AY[tb]-Ymat[c,tb])*inf_day[dayindex]);
         lambda[c,te] = lambda[c, te] + ((incamp + outcamp));
       }
     }
@@ -118,7 +118,7 @@ model {
   log_beta_sigma ~ normal(0, 1);
   log_beta_mu ~ normal(0, 1);
   gamma ~ normal(0,1);
-  alpha ~ normal(0, 1);
+  log_alpha ~ normal(0, 1);
   //Sample log-betas from normal distribution
   log_beta ~ normal(log_beta_mu, log_beta_sigma);
   //Iterate over camps

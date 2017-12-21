@@ -24,10 +24,10 @@ outbreak_sim <- function(pop, I0, beta, alpha, gamma, T) {
     ## Propagate risk from current step forward
     for (s in 1:num_sites) {
       ## Calculate within-site exposure
-      lambda[s,t:T] <- lambda[s,t:T] + (beta[s]*I[s,t]*foi_dist[1:(T-t+1)]/pop[s])
+      lambda[s,t:T] <- lambda[s,t:T] + (beta[t]*I[s,t]*foi_dist[1:(T-t+1)]/pop[s])
 
       ## Calculate cross-site exposure
-      lambda[s,t:T] <- lambda[s,t:T] + (alpha*(sum(I[,t])-I[s,t])*foi_dist[1:(T-t+1)])
+      lambda[s,t:T] <- lambda[s,t:T] + (alpha[t]*(sum(I[,t])-I[s,t])*foi_dist[1:(T-t+1)])/sum(pop)
     }
 
     ## Sample number of new infections in each location
@@ -63,6 +63,8 @@ nsamples <- dim(z$beta)[1]
 
 total_cases <- rep(0, nsamples)
 for (i in 1:nsamples) {
-  zz <- outbreak_sim(d$P, df$Y, z$beta[i,], z$alpha[i], z$gamma[i], max(d$t))
+  alpha_i <- exp(z$log_alpha[i] + z$day_incr[i,])
+  beta_i <- exp(z$log_alpha[i] + z$log_beta_mu[i] + z$day_incr[i,])
+  zz <- outbreak_sim(d$P, df$Y, beta_i, alpha_i, z$gamma[i], max(d$t))
   total_cases[i] <- sum(zz)
   }
