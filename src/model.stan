@@ -23,7 +23,7 @@ transformed data {
     for (i in 1:(T)) {
     day_x[i] = d;
     d = d + 1;
-  }
+    }
   }
 
   for (i in 1:C) {
@@ -35,18 +35,11 @@ transformed data {
 
 parameters {
   real log_beta_mu; //Avg log beta
-  vector[C] log_beta; //Realized log betas
-  real<lower=0> log_beta_sigma; //Variance of log betas
-  real log_alpha; //Per-capita exposure to individuals outside camp
+  matrix<lower=0>[C,T] beta; //Realized total beta by day
+  real<lower=0> beta_shape; //Shape of distribution of betas
+  real<lower=0, upper=1> alpha; //Per-capita exposure to individuals outside camp
   real<lower=0> gamma; //Shape of infectious period
-  //GP pars
-  real<lower=0> day_alpha;
-  real<lower=0> day_rho;
-  vector[T] day_eta;
 
-  //Noise pars
-  real<lower=0> day_sigma;
-  vector[T-1] day_incr_s;
 }
 
 transformed parameters {
@@ -54,14 +47,7 @@ transformed parameters {
   matrix[C,T] c_lambda = rep_matrix(0, C, T);
 
   vector<lower=0, upper=1>[T] inf_day; //Distribution of infectiousness by day
-  vector<lower=0>[C] beta = exp(log_beta);
-  vector[T] f_day;
-  vector[T] day_incr;
-
-  day_incr[1] = 0;
-  for (i in 2:T) {
-    day_incr[i] = day_incr_s[i-1];
-  }
+  real beta_rate = beta_shape/exp(log_beta_mu);
 
   //Pre-calculate proportion of infectiousness on each day since onset
   inf_day[1] = exponential_cdf(1, gamma);
@@ -74,8 +60,8 @@ transformed parameters {
     for (tb in 1:T) {
       for (te in tb:T) {
         int dayindex = te-tb+1;
-        real b_t = exp(log_alpha + log_beta_mu + day_incr[tb]);
-        real a_t = exp(log_alpha + day_incr[tb]);
+        real b_t = beta[c,tb];
+        real a_t = alpha*b_t;
         real incamp = (b_t/P[c])*Ymat[c,tb]*inf_day[dayindex];
         real outcamp = (a_t/sum(P)) * ((AY[tb]-Ymat[c,tb])*inf_day[dayindex]);
         lambda[c,te] = lambda[c, te] + ((incamp + outcamp));
@@ -88,39 +74,15 @@ transformed parameters {
   for (c in 1:C) {
     c_lambda[c] = cumulative_sum(lambda[c]);
   }
-    //Construct correlation matrix for age GP
-    {
-      matrix[T,T] L_K;
-      matrix[T,T] KM = cov_exp_quad(day_x, day_alpha, day_rho);
-      vector[T] f_day_shifted;
-      //Do the diagonal
-      for (a in 1:T)
-        KM[a,a] = KM[a, a] + day_delta;
-
-      L_K = cholesky_decompose(KM);
-      f_day = L_K * day_eta;
-
-    }
-
  
 }
 
 model {
-
-  //GP pars
-  day_rho ~ inv_gamma(5, 5);
-  day_alpha ~ normal(0, 1);
-  day_eta ~ normal(0, 1);
-
-  day_incr_s ~ normal(0, day_sigma);
-  day_sigma ~ normal(0, 2);
   //Model pars
-  log_beta_sigma ~ normal(0, 1);
+  to_vector(beta) ~ gamma(beta_shape, beta_rate);
   log_beta_mu ~ normal(0, 1);
   gamma ~ normal(0,1);
-  log_alpha ~ normal(0, 1);
-  //Sample log-betas from normal distribution
-  log_beta ~ normal(log_beta_mu, log_beta_sigma);
+
   //Iterate over camps
   for (c in 1:C) {
     //Log-likelihood for survival
