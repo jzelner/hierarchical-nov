@@ -12,22 +12,25 @@ transformed data {
   vector<lower=0>[T] AY = rep_vector(0, T); //Total number of cases on each day
   matrix<lower=0>[C,T] Ymat = rep_matrix(0, C, T); //Total number of cases in each camp
   vector<lower=0>[C] S; //Number of survivors in each camp at end of outbreak
-  real day_delta = 1e-9;
-  real day_x[T];
+  matrix[C,C] p_pop;
   for (i in 1:N) {
     AY[t[i]] = AY[t[i]] + Y[i];
     Ymat[J[i],t[i]] = Ymat[J[i],t[i]] + Y[i];
   }
-  {
-    real d = 1;
-    for (i in 1:(T)) {
-    day_x[i] = d;
-    d = d + 1;
-    }
-  }
+
 
   for (i in 1:C) {
     S[i] = P[i] - sum(Ymat[i]);
+  }
+
+  for (i in 1:C) {
+    for (j in 1:C) {
+      if (i == j) {
+        p_pop[i,j] = 1;
+      } else {
+        p_pop[i,j] = P[j]/(sum(P)-P[i]);
+      }
+    }
   }
 
 
@@ -57,14 +60,15 @@ transformed parameters {
 
   //Sum across camps to get force of infection for each day
   for (c in 1:C) { //Repeat for each camp
-    for (tb in 1:T) {
-      for (te in tb:T) {
-        int dayindex = te-tb+1;
-        real b_t = beta[c,tb];
-        real a_t = alpha*b_t;
-        real incamp = (b_t/P[c])*Ymat[c,tb]*inf_day[dayindex];
-        real outcamp = (a_t/sum(P)) * ((AY[tb]-Ymat[c,tb])*inf_day[dayindex]);
-        lambda[c,te] = lambda[c, te] + ((incamp + outcamp));
+    for (c2 in 1:C) {
+      real a = c == c2 ? alpha : 1-alpha;
+   
+      for (tb in 1:T) {
+        for (te in tb:T) {
+          int dayindex = te-tb+1;
+          real b_t = a*beta[c,tb];
+          lambda[c2,te] = lambda[c2,te] + (p_pop[c,c2]*b_t/P[c2])*Ymat[c,tb]*inf_day[dayindex];
+        }
       }
     }
   }
@@ -109,3 +113,22 @@ model {
 
 }
 
+generated quantities {
+
+  vector[T] daily_avg_r;
+  matrix[C,T] camp_r;
+
+  {
+    matrix[C,T] beta_Y = beta .* Ymat;
+    for (tt in 1:T) {
+      daily_avg_r[tt] = sum(col(beta_Y,tt))/sum(col(Ymat,tt));
+    }
+
+    for (c in 1:C) {
+      for (tt in 1:T) {
+          camp_r[c,tt] = Ymat[c,tt] > 0 ? beta[c,tt] : 0;
+    }
+
+}
+  }
+}
