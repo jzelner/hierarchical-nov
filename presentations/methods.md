@@ -1,3 +1,8 @@
+---
+header-includes:
+  - \usepackage{graphicx}
+--- 
+
 # Introduction
 
 In this paper, we construct a model of norovirus (NoV) transmission during a large outbreak to understand the role of individual-level heterogeneity in infectiousness on the overall outbreak attack rate and outbreak transmission dynamics. To do this, we constructed an individual-level, stochastic statistical model of individual-level NoV transmission. To account for heterogeneity in individual infection potential, we adopted the framework originally described by Lloyd-Smith et al. [@Lloyd-Smith:2005aa] to account for the impact of *superspreading* events among emerging infectious diseases. 
@@ -8,21 +13,35 @@ In this section, we outline a stochastic, discrete-time model of NoV transmissio
 
 ## Data Model
 
-We denote the number of incident cases observed on day $t$ in camp $j$ to be $y_{i,t}$. Individuals are assumed to be infectious at the beginning of their day of onset. We denote the day of onset of disease for individual $i$ as $z_i$. Each case is assumed to have an individual reproduction number $r_i$ drawn from a gamma distribution reparameterized in terms of the expected value of the individual reproduction number, $R$, and a shape parameter $\alpha$. So, $r_i \sim Gamma(R, \alpha)$. Because within each camp multiple cases may become infectious on a given day, the values of $r_i$ are not identifiable. However, we can take advantage of the fact that the sum of $n$ Gamma-distributed variables is Gamma distributed with mean $Rn$ to sample values $r_{jt}$ indicating the daily average value of $r$ across all individuals who became infectious in camp $j$ on day $t$. 
+We denote the number of incident cases observed on day $t$ in camp $j$ to be $y_{i,t}$. Individuals are assumed to be infectious at the beginning of their day of onset. We denote the day of onset of disease for individual $i$ as $z_i$. Each case is assumed to have an individual reproduction number $r_i$ drawn from a gamma distribution reparameterized in terms of the expected value of the individual reproduction number, $R$, and a shape parameter $\alpha$. So, $r_i \sim Gamma(R, \alpha)$. Because within each camp multiple cases may become infectious on a given day, the values of $r_i$ are not identifiable. However, we can take advantage of the fact that the sum of $n$ Gamma-distributed variables is Gamma distributed with mean $R \times n$ to sample values $r_{jt}$ indicating the daily average value of $r$ across all individuals who became infectious in camp $j$ on day $t$. 
 
 We allow individual infectiousness to decay according to a Geometric distribution with parameter $\gamma \in (0,1]$, where:
 
 $$
-g(x,\gamma) = (1-\gamma)^x \gamma
+g(x | \gamma) = (1-\gamma)^x \gamma
 $$
 
 When $t \ge z_i$, $g(t-z_i)$ is the proportion of the infectiousness of individual $i$ deposited on day $t$. Otherwise, when $t  z_i$, this value is equal to zero, i.e. before the individual becomes infectious. The parameter $\gamma$ has a straightforward interpretation as the proportion of the individual's infectiousness deposited on the day of symptom onset, and the proportion of *remaining* infectiousness deposited each day thereafter.
 
-We denote the parameter $\zeta$ to be the proportion of an individual's infectiousness that is deposited within his or her camp of residence, $j$, with the remaining infectiousness spread over all individuals not in that individual's camp. We denote the force of infection in camp $j$ at time $t$ as $\lambda_{j,t}$ and can write this as follows:
+We denote the parameter $\zeta$ to be the proportion of an individual's infectiousness that is deposited within his or her camp of residence, $j$, with the remaining infectiousness spread over all individuals not in that individual's camp. We assume that transmission within and between camps is frequency dependent. The population of camp $j$ is denoted by $n_j$, and the total population over all $D$ camps $N = \sum_{j=1}^{D} n_j$.
+
+We denote the force of infection in camp $j$ at time $t$ as $\lambda_{j,t}$ and can write this as follows:
 
 $$
-\lambda_{j,t} = \zeta \sum_{k \le t} r_{j,k} y_{j,k} g(t-k) + (1-\zeta)\sum_{i \ne j} \sum_{k \le t} r_{i,k} y_{i,k} g(t-k)
+\lambda_{jt} =  \sum_{k \le t}\left( \zeta \left(\frac{r_{jk} y_{jk}}{n_j}\right) g(t-k) + (1-\zeta)\sum_{i \ne j}\left(\frac{r_{ik} y_{ik}}{N-n_i}\right) g(t-k)\right)
 $$
+
+# Results
+
+# Figures & Tables
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.6\textwidth]{output/figures/daily_avg_r.pdf}
+\caption{Estimated daily avg. reproductive number across all camps. Dashed lines indicated 95\% posterior credible intervals. Dotted line indicates critical value of R = 1.}
+\label{fig:dailyr}
+\end{figure}
+
+
 
 
 # References

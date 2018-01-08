@@ -18,12 +18,16 @@ daily_r <- daily_r %>% select(day, low_ci, median, high_ci)
 g <- ggplot(daily_r) + geom_line(aes(x=day, y = median)) +
   geom_line(aes(x=day, y = low_ci), linetype = "dashed") +
   geom_line(aes(x=day, y = high_ci), linetype = "dashed") +
-  geom_hline(yintercept = 1, linetype = "dotted")
+  geom_hline(yintercept = 1, linetype = "dotted") +
+  xlab("Outbreak day") +
+  ylab("Avg. R across all infectious individuals")
+
+ggsave("output/figures/daily_avg_r.pdf", width = 6, height = 3)
 
 num_camp <- dim(z$camp_r)[2]
 
-all_camp_r <- data.frame
-for (i in 1:num_camp) {
+all_camp_r <- data.frame()
+for (i in 1:num_camp) { 
 daily_r <- z$camp_r[,i,]%>%
   apply(2, function(x) quantile(x, probs = c(0.025, 0.5, 0.975))) %>%
   t %>%
