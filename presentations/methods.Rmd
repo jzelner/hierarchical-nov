@@ -21,7 +21,7 @@ $$
 g(x | \gamma) = (1-\gamma)^x \gamma
 $$
 
-When $t \ge z_i$, $g(t-z_i)$ is the proportion of the infectiousness of individual $i$ deposited on day $t$. Otherwise, when $t  z_i$, this value is equal to zero, i.e. before the individual becomes infectious. The parameter $\gamma$ has a straightforward interpretation as the proportion of the individual's infectiousness deposited on the day of symptom onset, and the proportion of *remaining* infectiousness deposited each day thereafter.
+When $t \ge z_i$, $g(t-z_i)$ is the proportion of the infectiousness of individual $i$ deposited on day $t$. Otherwise, when $t < z_i$, this value is equal to zero, i.e. before the individual becomes infectious. The parameter $\gamma$ has a straightforward interpretation as the proportion of the individual's infectiousness deposited on the day of symptom onset, and the proportion of *remaining* infectiousness deposited each day thereafter.
 
 We denote the parameter $\zeta$ to be the proportion of an individual's infectiousness that is deposited within his or her camp of residence, $j$, with the remaining infectiousness spread over all individuals not in that individual's camp. We assume that transmission within and between camps is frequency dependent. The population of camp $j$ is denoted by $n_j$, and the total population over all $D$ camps $N = \sum_{j=1}^{D} n_j$.
 
@@ -32,6 +32,25 @@ $$
 $$
 
 # Results
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+require(readr)
+require(dplyr)
+## Load pars
+
+z <- read_csv("../output/scalar_pars.csv")
+
+
+zeta <- z %>% filter(par == "zeta")
+
+beta <- z %>% filter(par == "log_beta_mu")
+beta_shape <- z%>% filter(par == "beta_shape")
+```
+
+Individuals deposit approximately `r sprintf("%0.0f", 100*zeta[,"median"])` percent of their infectiousness within their camp of residence (95% CI = `r sprintf("%0.0f, %0.0f", 100*zeta[,"low_ci"], 100*zeta[,"high_ci"])`).
+
+The average value of R across all individuals is `r sprintf("%0.2f", exp(beta[,"median"]))` (95% CI = `r sprintf("%0.2f, %0.2f", exp(beta[,"low_ci"]), exp(beta[,"high_ci"]))`). However, the value of $r_i$ across individuals is highly dispersed $\alpha$ = `r sprintf("%0.2f", beta_shape[,"median"])` (95% CI = `r sprintf("%0.2f, %0.2f", beta_shape[,"low_ci"], beta_shape[,"high_ci"])`), indicating wide heterogeneity in infectious across individuals.
+
+
 
 # Figures & Tables
 \begin{figure}[h]

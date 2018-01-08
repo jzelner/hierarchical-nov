@@ -1,2 +1,8 @@
 output/
 *.Rds
+texout.txt
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.out

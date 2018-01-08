@@ -40,7 +40,7 @@ parameters {
   real log_beta_mu; //Avg log beta
   matrix<lower=0>[C,T] beta; //Realized total beta by day
   real<lower=0> beta_shape; //Shape of distribution of betas
-  real<lower=0, upper=1> alpha; //Per-capita exposure to individuals outside camp
+  real<lower=0, upper=1> zeta; //Per-capita exposure to individuals outside camp
   real<lower=0, upper = 1> gamma; //Shape of infectious period
 
 }
@@ -61,7 +61,7 @@ transformed parameters {
   //Sum across camps to get force of infection for each day
   for (c in 1:C) { //Repeat for each camp
     for (c2 in 1:C) {
-      real a = c == c2 ? alpha : 1-alpha;
+      real a = c == c2 ? zeta : 1-zeta;
       for (tb in 1:T) {
         for (te in tb:T) {
           int dayindex = te-tb+1;

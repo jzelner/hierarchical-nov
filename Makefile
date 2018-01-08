@@ -1,4 +1,23 @@
 ###############################################################################
+## Setup for running model
+output/nov_model_input.Rds : src/prep_model_input.R data/jamboree_data.csv data/jamboree_pop.csv
+	@mkdir -p $(@D)
+	./$<
+
+output/nov_model.Rds : src/runmodel.R src/model.stan output/nov_model_input.Rds
+	@mkdir -p $(@D)
+	./$<
+
+###############################################################################
+## Post-processing
+output/figures/daily_avg_r.pdf : src/avg_r_plot.R output/nov_model.Rds
+	@mkdir -p $(@D)
+	./$<
+
+output/scalar_pars.csv : src/parameter_ci.R output/nov_model.Rds
+	@mkdir -p $(@D)
+	./$<
+###############################################################################
 ## Below here is for generating output documents
 
 UNAME_S := $(shell uname -s)
@@ -29,6 +48,13 @@ output/%.tex : presentations/%.md
 	@echo ----Generating $(@F)----
 	@mkdir -p $(@D)
 	pandoc $< -V geometry:margin=0.75in --from=markdown -t latex -s -o $@ --bibliography=$(BIBDIR) --filter pandoc-citeproc --csl $(CSL) --latex-engine=xelatex $(FONT) --template=presentations/config/template.latex 
+
+## Generic rule for translating markdown to tex
+output/%.tex : output/%.md
+	@echo ----Generating $(@F)----
+	@mkdir -p $(@D)
+	pandoc $< -V geometry:margin=0.75in --from=markdown -t latex -s -o $@ --bibliography=$(BIBDIR) --filter pandoc-citeproc --csl $(CSL) --latex-engine=xelatex $(FONT) --template=presentations/config/template.latex
+
 
 ## Generic rule for translating tex to pdf
 output/%.pdf : output/%.tex $(FIGURES)
