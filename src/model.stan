@@ -6,6 +6,7 @@ data {
   int<lower=1, upper=C> J[N]; //Camp index for each observation
   int<lower=1, upper=T> t[N]; //Day of each observation
   vector<lower=0>[N] Y; //Number of cases observed on each day
+  real<lower=0, upper=1> epsilon; //Rate of progression from infection to symptoms
 }
 
 transformed data {
