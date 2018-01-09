@@ -29,7 +29,8 @@ data_in <- list(C = nrow(camp_id),
                 P = pd$N,
                 J = od$id,
                 t = od$t,
-                Y = od$cases
+                Y = od$cases,
+                epsilon = 0.7
                 )
 
 

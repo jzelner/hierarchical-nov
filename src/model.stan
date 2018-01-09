@@ -14,6 +14,7 @@ transformed data {
   matrix<lower=0>[C,T] Ymat = rep_matrix(0, C, T); //Total number of cases in each camp
   vector<lower=0>[C] S; //Number of survivors in each camp at end of outbreak
   matrix[C,C] p_pop;
+  vector[T] e_log_ll;
   for (i in 1:N) {
     AY[t[i]] = AY[t[i]] + Y[i];
     Ymat[J[i],t[i]] = Ymat[J[i],t[i]] + Y[i];
@@ -34,7 +35,9 @@ transformed data {
     }
   }
 
-
+  for (i in 1:T) {
+    e_log_ll[i] = log(pow((1-epsilon),i-1)*epsilon);
+  }
 }
 
 parameters {
@@ -54,9 +57,9 @@ transformed parameters {
   real beta_rate = beta_shape/exp(log_beta_mu);
 
   //Pre-calculate proportion of infectiousness on each day since onset
-  inf_day[1] = gamma; #exponential_cdf(1, gamma);
+  inf_day[1] = gamma; //exponential_cdf(1, gamma);
   for (i in 2:T) {
-    inf_day[i] = pow((1-gamma),i-1)*gamma;#exponential_cdf(i, gamma) - exponential_cdf(i-1, gamma);
+    inf_day[i] = pow((1-gamma),i-1)*gamma;//exponential_cdf(i, gamma) - exponential_cdf(i-1, gamma);
   }
 
   //Sum across camps to get force of infection for each day
@@ -78,36 +81,30 @@ transformed parameters {
   for (c in 1:C) {
     c_lambda[c] = cumulative_sum(lambda[c]);
   }
- 
 }
 
 model {
+
+  vector[T] log_ll;
   //Model pars
   to_vector(beta) ~ gamma(beta_shape, beta_rate);
   log_beta_mu ~ normal(0, 1);
   gamma ~ normal(0,1);
-
   //Iterate over camps
   for (c in 1:C) {
     //Log-likelihood for survival
     target += -S[c]*c_lambda[c,T];
-    for (i in 2:T) {
-      //Log-likelihood for infections
-      real c_ex = 0;
-      real d_ex = lambda[c,i-1];
-      real ll;
-      if (i > 2) {
-        c_ex = c_lambda[c,i-2];
+      for (tt in 2:T) {
+        if (Ymat[c,tt] > 0) {
+        //Log-likelihood for infections
+          for (i in 1:(tt-1)) { //i indexes infection times, tt onset times
+          real c_ex = i == 1 ? 0 : c_lambda[c,i-1];
+          real d_ex = lambda[c,i];
+          real e_log = e_log_ll[tt-i];
+          log_ll[i] = log(d_ex) - c_ex + e_log;
+        }
+          target += Ymat[c,tt]*log_sum_exp(head(log_ll, tt-1));
       }
-
-      if (i > 3) {
-        real c_ex_1 = c_lambda[c, i-3];
-        real d_ex_1 = lambda[c, i-2];
-        ll = log_sum_exp(log(0.5) + log(d_ex)-c_ex, log(0.5) + log(d_ex_1)-c_ex_1);
-      } else {
-        ll = log(d_ex)-c_ex;
-      }
-      target += Ymat[c,i]*ll;
     }
   }
 
