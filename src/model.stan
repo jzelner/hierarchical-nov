@@ -41,7 +41,7 @@ transformed data {
 }
 
 parameters {
-  real log_beta_mu; //Avg log beta
+  vector[2] log_beta; //Avg log beta
   matrix<lower=0>[C,T] beta; //Realized total beta by day
   real<lower=0> beta_shape; //Shape of distribution of betas
   real<lower=0, upper=1> zeta; //Per-capita exposure to individuals outside camp
@@ -54,8 +54,6 @@ transformed parameters {
   matrix[C,T] c_lambda = rep_matrix(0, C, T);
 
   vector<lower=0, upper=1>[T] inf_day; //Distribution of infectiousness by day
-  real beta_rate = beta_shape/exp(log_beta_mu);
-
   //Pre-calculate proportion of infectiousness on each day since onset
   inf_day[1] = gamma; //exponential_cdf(1, gamma);
   for (i in 2:T) {
@@ -87,8 +85,12 @@ model {
 
   vector[T] log_ll;
   //Model pars
-  to_vector(beta) ~ gamma(beta_shape, beta_rate);
-  log_beta_mu ~ normal(0, 1);
+  for (i in 1:T) {
+    real beta_rate = exp(log_beta[1] + log_beta[2]*i)/beta_shape;
+    col(beta,i) ~ gamma(beta_shape, beta_rate);
+  }
+  log_beta ~ normal(0, 1);
+  beta_shape ~ normal(1,1);
   gamma ~ normal(0,1);
   //Iterate over camps
   for (c in 1:C) {
