@@ -1,4 +1,14 @@
 ###############################################################################
+## Data figures
+output/figures/all_camp_cases%pdf output/figures/cases_by_camp%pdf : src/data_figure%R data/jamboree_data.csv
+	@mkdir -p $(@D)
+	./$<
+
+DATAFIGURES := output/figures/all_camp_cases.pdf output/figures/cases_by_camp.pdf
+.PHONY: datafigures
+datafigures : $(DATAFIGURES)
+
+###############################################################################
 ## Setup for running model
 output/nov_model_input.Rds : src/prep_model_input.R data/jamboree_data.csv data/jamboree_pop.csv
 	@mkdir -p $(@D)
@@ -26,7 +36,7 @@ TEXENGINE := xelatex
 BIBDIR := /home/jzelner/repos/bibtex-library/papers.bib
 ## Generate PDFs from TeX and Rmd files
 
-FONT += --variable mainfont=Arial -V fontsize=11pt 
+FONT += --variable mainfont=Arial -V fontsize=11pt
 ifeq ($(UNAME_S), Darwin)
    TEXENGINE = xelatex
    BIBDIR = /Users/jzelner/Dropbox/bibtex/papers.bib
