@@ -13,7 +13,8 @@ daily_r <- z$daily_avg_r %>%
 
 colnames(daily_r) <- c("low_ci", "median", "high_ci")
 daily_r$day <- 1:nrow(daily_r)
-daily_r <- daily_r %>% select(day, low_ci, median, high_ci)
+daily_r <- daily_r %>% select(day, low_ci, median, high_ci) %>%
+  filter(day <= 10)
 
 daily_r$day <- daily_r$day -1
 
@@ -24,7 +25,7 @@ g <- ggplot(daily_r) + geom_line(aes(x=day, y = median)) +
   geom_vline(xintercept = 3, linetype = "dashed") + 
   xlab("Outbreak day") +
   ylab("Avg. R across all infectious individuals") +
-  theme_bw()
+  theme_bw() 
 
 ggsave("output/figures/daily_avg_r.pdf", width = 6, height = 3)
 
@@ -35,12 +36,12 @@ for (i in 1:num_camp) {
 daily_r <- z$camp_r[,i,]%>%
   apply(2, function(x) quantile(x, probs = c(0.025, 0.5, 0.975))) %>%
   t %>%
-  data.frame
+  data.frame 
 
 colnames(daily_r) <- c("low_ci", "median", "high_ci")
 daily_r$day <- 1:nrow(daily_r)
 daily_r$camp <- i
-daily_r <- daily_r %>% select(camp,day, low_ci, median, high_ci)
+daily_r <- daily_r %>% select(camp,day, low_ci, median, high_ci) %>% filter(day <= 10)
 
 all_camp_r <- rbind(all_camp_r, daily_r)
 
@@ -58,6 +59,6 @@ camp_g <- ggplot(all_camp_r) +
   theme_bw() +
   xlab("Average reproduction number") +
   ylab("Cases in camp") +
-  coord_cartesian(ylim=c(0,40))
+  coord_cartesian(ylim=c(0,40)) 
 
 ggsave("output/figures/daily_camp_r.pdf", width = 6, height = 8)

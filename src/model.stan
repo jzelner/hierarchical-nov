@@ -15,6 +15,7 @@ transformed data {
   vector<lower=0>[C] S; //Number of survivors in each camp at end of outbreak
   matrix[C,C] p_pop;
   vector[T] e_log_ll;
+  real total_pop = sum(P);
   for (i in 1:N) {
     AY[t[i]] = AY[t[i]] + Y[i];
     Ymat[J[i],t[i]] = Ymat[J[i],t[i]] + Y[i];
@@ -44,7 +45,7 @@ parameters {
   vector[2] log_beta; //Avg log beta
   matrix<lower=0>[C,T] beta; //Realized total beta by day
   real<lower=0> beta_shape; //Shape of distribution of betas
-  real<lower=0, upper=1> zeta; //Per-capita exposure to individuals outside camp
+  real<lower=0> zeta; //Per-capita exposure to individuals outside camp
   real<lower=0, upper = 1> gamma; //Shape of infectious period
 
 }
@@ -63,12 +64,12 @@ transformed parameters {
   //Sum across camps to get force of infection for each day
   for (c in 1:C) { //Repeat for each camp
     for (c2 in 1:C) {
-      real a = c == c2 ? zeta : 1-zeta;
-      for (tb in 1:T) {
-        for (te in tb:T) {
+      real a = c == c2 ? zeta : 1;
+      for (tb in 1:11) {
+        for (te in tb:11) {
           int dayindex = te-tb+1;
-          real b_t = a*beta[c,tb];
-          lambda[c2,te] = lambda[c2,te] + (p_pop[c,c2]*b_t/P[c2])*Ymat[c,tb]*inf_day[dayindex];
+          real b_t = a*beta[c,tb]/total_pop;
+          lambda[c2,te] = lambda[c2,te] + b_t*Ymat[c,tb]*inf_day[dayindex];
         }
       }
     }
@@ -92,6 +93,7 @@ model {
   log_beta ~ normal(0, 1);
   beta_shape ~ normal(1,1);
   gamma ~ normal(0,1);
+  zeta ~ normal(0, 1);
   //Iterate over camps
   for (c in 1:C) {
     //Log-likelihood for survival
@@ -116,18 +118,22 @@ generated quantities {
 
   vector[T] daily_avg_r;
   matrix[C,T] camp_r;
-
+  matrix[C,T] beta_Y;
   {
-    matrix[C,T] beta_Y = beta .* Ymat;
+
+    for (c in 1:C) {
+      for (tt in 1:T) {
+        real active_y = Ymat[c,tt] > 0 ? beta[c,tt] : 0;
+        real c_p = (P[c]/total_pop);
+        camp_r[c,tt] = (c_p)*(zeta*active_y) + (1-c_p)*active_y;
+      }
+    }
+    beta_Y = camp_r .* Ymat;
     for (tt in 1:T) {
       daily_avg_r[tt] = sum(col(beta_Y,tt))/sum(col(Ymat,tt));
     }
 
-    for (c in 1:C) {
-      for (tt in 1:T) {
-          camp_r[c,tt] = Ymat[c,tt] > 0 ? beta[c,tt] : 0;
-    }
 
-}
+
   }
 }

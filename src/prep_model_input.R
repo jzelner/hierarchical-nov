@@ -30,7 +30,7 @@ data_in <- list(C = nrow(camp_id),
                 J = od$id,
                 t = od$t,
                 Y = od$cases,
-                epsilon = 0.7
+                epsilon = 0.3
                 )
 
 
