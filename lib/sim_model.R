@@ -1,16 +1,15 @@
-sir_outbreak <- function(beta, alpha, gamma, epsilon, C, N, I0 = 1, dt = 0.1, Z, T) {
-  ## Set initial lambda values based on inputs
-  init_inf_dens <- inf_dens(1)
-  for (c1 in 1:C) {
-    for (c2 in 1:C) {
-      a <- 1
-      if (c1 == c2) {
-        a <- zeta
-      }
-      lambda[c2,] <- lambda[c2,] + (a*init_betas[c1]/sum(N))*I0[c1]*init_inf_dens
-    }
+
+
+ind_contribution <- function(beta, zeta, t, c, C, inf_d) {
+
+  ind_inf_density <- inf_d(t)
+
+  all_c <- matrix(0, nrow = C, ncol = length(ind_inf_density))
+  for (i in 1:C) {
+    all_c[i,] <- beta*ind_inf_density*ifelse(i == c, zeta, 1)
   }
 
+  return(all_c)
 
 }
 
@@ -69,13 +68,72 @@ initialize_outbreak <- function(gamma, epsilon, zeta, beta_shape, beta_mean, C, 
   return_vals <- list(inf_dens = inf_dens,
                       onset_time = onset_time,
                       beta = beta,
+                      zeta = zeta,
                       lambda = lambda,
                       incidence = incidence,
                       N = N,
-                      S = N - I0)
+                      S = N - I0,
+                      Z = Z,
+                      T = T,
+                      C = C)
 
   return(return_vals)
 
 }
 
-test_init <- initialize_outbreak(0.9, 0.5, 2.0, 0.7, 2.0, 7, rep(100, 7), c(1,0,0,0,0,0,0), c(2,2,0,0,0,0,0), 10, 14)
+seir_outbreak <- function(pars) {
+
+  incidence <- pars$incidence
+  lambda <- pars$lambda
+  total_N <- sum(pars$N)
+  S <- pars$S
+  C <- pars$C
+  T <- pars$T
+  for (t in 1:pars$Z) {
+
+    ## Calculate FOI from each camp at time T
+    for (i in 1:C) {
+      camp_incidence <- incidence[i,t]
+      if (camp_incidence > 0) {
+        lambda <- lambda + (camp_incidence/total_N)*ind_contribution(pars$beta[i,t],
+                                                                     pars$zeta,
+                                                                     t,
+                                                                     i,
+                                                                     pars$C,
+                                                                     pars$inf_dens)
+
+      }
+
+    
+      }
+    ## Draw number of new infections in each camp
+    new_infections <- rbinom(C, S, 1.0-exp(-lambda[,t]))
+    print("UPDATE")
+    print(S)
+ 
+    S <- S - new_infections
+   print(new_infections)
+    print(S)
+      for (i in 1:C) {
+        if (new_infections[i] > 0) {
+          ot <- pars$onset_time(rep(t, new_infections[i]))
+          for (j in 1:length(ot)) {
+            if (ot[j] <= T) {
+              incidence[i,ot[j]] <- incidence[i,ot[j]] + 1
+              }
+          }
+        }
+      }
+
+
+
+
+  }
+
+  return(incidence)
+}
+
+test_init <- initialize_outbreak(0.9, 0.9, 2.0, 1.0, 2.0, 7, rep(100, 7), c(1,0,0,0,0,0,0), c(2,2,0,0,0,0,0), 10, 14)
+
+test_run <- seir_outbreak(test_init)
+
