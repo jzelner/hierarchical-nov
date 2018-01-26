@@ -93,6 +93,7 @@ $$
 r_{jt} = \beta_{jt} \left(\zeta n_j + \sum_{i \ne j}^{C} n_i\right)
 $$
 
+
 # Results
 ```{r, warning=FALSE, message=FALSE, echo=FALSE}
 require(readr)
@@ -129,7 +130,6 @@ The average value of R across all individuals is `r sprintf("%0.2f", exp(beta[,"
 \caption{Estimated daily avg. reproductive number across all camps. Dashed lines indicated 95\% posterior credible intervals. Dotted line indicates critical value of R = 1.}
 \label{fig:campcases}
 \end{figure}
-
 
 \begin{figure}
 \centering
