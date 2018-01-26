@@ -1,4 +1,7 @@
 ---
+title: "Modeling clustered transmission in a large Norovirus outbreak"
+author: Jon Zelner
+date: \today
 header-includes:
   - \usepackage{graphicx}
 --- 
@@ -13,22 +16,69 @@ In this section, we outline a stochastic, discrete-time model of NoV transmissio
 
 ## Data Model
 
-We denote the number of incident cases observed on day $t$ in camp $j$ to be $y_{i,t}$. Individuals are assumed to be infectious at the beginning of their day of onset. We denote the day of onset of disease for individual $i$ as $z_i$. Each case is assumed to have an individual reproduction number $r_i$ drawn from a gamma distribution reparameterized in terms of the expected value of the individual reproduction number, $R$, and a shape parameter $\alpha$. So, $r_i \sim Gamma(R, \alpha)$. Because within each camp multiple cases may become infectious on a given day, the values of $r_i$ are not identifiable. However, we can take advantage of the fact that the sum of $n$ Gamma-distributed variables is Gamma distributed with mean $R \times n$ to sample values $r_{jt}$ indicating the daily average value of $r$ across all individuals who became infectious in camp $j$ on day $t$. 
+We denote the number of incident cases observed on day $t$ in camp $j$ to be $y_{i,t}$. Individuals are assumed to be infectious at the beginning of their day of onset. We denote the day of onset of disease for individual $i$ as $z_i$. 
+
+### Heterogeneous infectiousness 
+
+Each case is assumed to have a *per-capita* infectiousness $\beta_i$ drawn from a gamma distribution reparameterized in terms of the expected value of the per-capita infectiousness, $\beta_{mu}$, and a shape parameter $\beta_{\alpha}$. So, $\beta_i \sim Gamma(\beta_{\mu}, \beta_{\alpha})$. 
+
+Because within each camp multiple cases may become infectious on a given day, the values of $\beta_i$ are not individually identifiable. However, we can take advantage of the fact that the sum of $n$ Gamma-distributed variables is Gamma distributed with mean $\beta_{\mu} \times n$ to sample values $\beta_{jt}$ indicating the daily average per-capita infectiousness across all individuals who became infectious in camp $j$ on day $t$. 
+
+### Time-varying infectiousness
 
 We allow individual infectiousness to decay according to a Geometric distribution with parameter $\gamma \in (0,1]$, where:
 
 $$
-g(x | \gamma) = (1-\gamma)^x \gamma
+g(x | \gamma) = \gamma (1-\gamma)^x 
 $$
 
 When $t \ge z_i$, $g(t-z_i)$ is the proportion of the infectiousness of individual $i$ deposited on day $t$. Otherwise, when $t < z_i$, this value is equal to zero, i.e. before the individual becomes infectious. The parameter $\gamma$ has a straightforward interpretation as the proportion of the individual's infectiousness deposited on the day of symptom onset, and the proportion of *remaining* infectiousness deposited each day thereafter.
 
-We denote the parameter $\zeta$ to be the proportion of an individual's infectiousness that is deposited within his or her camp of residence, $j$, with the remaining infectiousness spread over all individuals not in that individual's camp. We assume that transmission within and between camps is frequency dependent. The population of camp $j$ is denoted by $n_j$, and the total population over all $D$ camps $N = \sum_{j=1}^{D} n_j$.
+### Force of infection
 
-We denote the force of infection in camp $j$ at time $t$ as $\lambda_{j,t}$ and can write this as follows:
+We denote the parameter $\zeta$ to be the ratio of an individual's per-capita infectiousness for within-camp contacts ($i = j$) vs. outside-camp contacts ($i \ne j$).  We denote the force of infection in camp $j$ at time $t$ as $\lambda_{j,t}$ and can write this as follows:
 
 $$
-\lambda_{jt} =  \sum_{k \le t}\left( \zeta \left(\frac{r_{jk} y_{jk}}{n_j}\right) g(t-k) + (1-\zeta)\sum_{i \ne j}\left(\frac{r_{ik} y_{ik}}{N-n_i}\right) g(t-k)\right)
+\lambda_{jt} =  \sum_{k \le t}\left( \zeta \left({r_{jk} y_{jk}}\right) g(t-k) + \sum_{i \ne j}\left(r_{ik} y_{ik}\right) g(t-k)\right)
+$$
+
+### Likelihood
+
+The likelihood of observing *each* of the $y_{jt}$ cases in camp $j$ on day $t > 1$ is a function of three components: 
+
+1) Likelihood of escaping infection from $t=1$ until the time of infection for case $i$, $t_{i}^*$.
+
+2) Likelihood of infection in camp $j$ at $t = t^*_i$, and,
+
+3) Likelihood of latent period of duration $z_i - t_i^*$, where $z_i$ is the time of onset for case $i$.
+
+The total system likelihood involves a fourth component:
+
+4 ) Likelihood that the $S_j$ individuals in camp $j$ who did not develop disease during the observation period escaped infection from $t = 1$ until time $T$, when the jamboree ended.
+
+The probability that an individual is infected at time $t_i^*$ is a function of a piecewise exponential likelihood, i.e. 1 and 2 above:
+
+$$ 
+Pr(t = t^*_{ij}) = \lambda_{jt} exp\left(-\sum_{i = 1}^{i < t} \lambda_{ji}\right)
+$$
+
+
+The probability that an individual has a latent period of $z_i - t_i^*$ is described by a geometric distribution with rate parameter $\epsilon$:
+
+$$
+Pr(x  = z_i-t^*_{ij}) = \epsilon (1-\epsilon)^{(z_i-t^*_{ij}-1)}
+$$
+
+For case $i$, the marginal probability - summing over all possible latent periods - that $t = z_i$ is:
+
+$$
+Pr(z_i = t) = \sum_{j = 1}^{z_i - 1} \frac{Pr(j = t^*_{ij}) Pr(x = z_i-j)}{\sum_{k = 1}^{z_i-1}{Pr(x = z_i - k)}}
+$$
+
+Then, for camp $j$, the probability of observing $y_j2$ cases on day 2, $y_j3$ on day 3, etc, is:
+
+$$
+Pr(y_j = y) = \prod_{t < T}
 $$
 
 # Results
