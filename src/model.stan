@@ -103,7 +103,7 @@ model {
         //Log-likelihood for infections
           for (i in 1:(tt-1)) { //i indexes infection times, tt onset times
           real c_ex = i == 1 ? 0 : c_lambda[c,i-1];
-          real d_ex = lambda[c,i];
+          real d_ex = 1.0 - exp(-lambda[c,i]);
           real e_log = e_log_ll[tt-i];
           log_ll[i] = log(d_ex) - c_ex + e_log;
         }

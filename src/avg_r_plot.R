@@ -7,7 +7,7 @@ require(ggplot2)
 z <- readRDS("output/nov_model.Rds") %>% extract
 
 daily_r <- z$daily_avg_r %>%
-  apply(2, function(x) quantile(x, probs = c(0.025, 0.5, 0.975))) %>%
+  apply(2, function(x) quantile(x, probs = c(0.1, 0.5, 0.9))) %>%
   t %>%
   data.frame
 
@@ -34,7 +34,7 @@ num_camp <- dim(z$camp_r)[2]
 all_camp_r <- data.frame()
 for (i in 1:num_camp) { 
 daily_r <- z$camp_r[,i,]%>%
-  apply(2, function(x) quantile(x, probs = c(0.025, 0.5, 0.975))) %>%
+  apply(2, function(x) quantile(x, probs = c(0.1, 0.5, 0.9))) %>%
   t %>%
   data.frame 
 
@@ -57,8 +57,8 @@ camp_g <- ggplot(all_camp_r) +
   geom_vline(xintercept = 3, linetype = "dotted") +
   facet_grid( camp ~ .) +
   theme_bw() +
-  xlab("Average reproduction number") +
-  ylab("Cases in camp") +
-  coord_cartesian(ylim=c(0,40)) 
+  xlab("Day") +
+  ylab("Daily reproduction number") 
+#  coord_cartesian(ylim=c(0,40)) 
 
 ggsave("output/figures/daily_camp_r.pdf", width = 6, height = 8)

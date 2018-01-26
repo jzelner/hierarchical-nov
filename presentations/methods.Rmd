@@ -10,6 +10,10 @@ header-includes:
 
 In this paper, we construct a model of norovirus (NoV) transmission during a large outbreak to understand the role of individual-level heterogeneity in infectiousness on the overall outbreak attack rate and outbreak transmission dynamics. To do this, we constructed an individual-level, stochastic statistical model of individual-level NoV transmission. To account for heterogeneity in individual infection potential, we adopted the framework originally described by Lloyd-Smith et al. [@Lloyd-Smith:2005aa] to account for the impact of *superspreading* events among emerging infectious diseases. 
 
+# Data
+
+We analyze data previously published by Heijne et al. [@Heijne2009] from a large Norovirus outbreak during a scout jamboree in the Netherlands in 2004. Figure \ref{fig:allcases} shows the distribution of cases over time during the outbreak, and Figure \ref{fig:campcases} shows the evolution of the outbreak within the seven individual sub-camps affected during the outbreak.
+
 # Methods
 
 In this section, we outline a stochastic, discrete-time model of NoV transmission within and between sub-camps of the outbreak.
@@ -59,7 +63,7 @@ The total system likelihood involves a fourth component:
 The probability that an individual is infected at time $t_i^*$ is a function of a piecewise exponential likelihood, i.e. 1 and 2 above:
 
 $$ 
-Pr(t = t^*_{ij}) = \lambda_{jt} exp\left(-\sum_{i = 1}^{i < t} \lambda_{ji}\right)
+Pr(t = t^*_{ij}) = \left(1- e^{-\lambda_{jt}}\right) exp\left(-\sum_{i = 1}^{i < t} \lambda_{ji}\right)
 $$
 
 
@@ -75,10 +79,18 @@ $$
 Pr(z_i = t) = \sum_{j = 1}^{z_i - 1} \frac{Pr(j = t^*_{ij}) Pr(x = z_i-j)}{\sum_{k = 1}^{z_i-1}{Pr(x = z_i - k)}}
 $$
 
-Then, for camp $j$, the probability of observing $y_j2$ cases on day 2, $y_j3$ on day 3, etc, is:
+Then, for all camps, $j$, the probability of observing $y_j2$ cases on day 2, $y_j3$ on day 3, etc, is:
 
 $$
-Pr(y_j = y) = \prod_{t < T}
+Pr(y_{jt}) = \prod_{i = 1}^{C} \prod_{t = 1}^{T} y_{it} Pr(z_i = i)
+$$
+
+## Calculating reproduction numbers
+
+We can calculate the individual reproduction number for each infectious individual by multiplying the baseline per-capita rate of infection by the number of people each infectious individual is exposed to both within their camp of residence, and in other camps, as follows:
+
+$$
+r_{jt} = \beta_{jt} \left(\zeta n_j + \sum_{i \ne j}^{C} n_i\right)
 $$
 
 # Results
@@ -115,7 +127,7 @@ The average value of R across all individuals is `r sprintf("%0.2f", exp(beta[,"
 \centering
 \includegraphics[width=0.6\textwidth]{output/figures/cases_by_camp.pdf}
 \caption{Estimated daily avg. reproductive number across all camps. Dashed lines indicated 95\% posterior credible intervals. Dotted line indicates critical value of R = 1.}
-\label{fig:allcases}
+\label{fig:campcases}
 \end{figure}
 
 
