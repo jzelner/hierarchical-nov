@@ -18,7 +18,8 @@ camp_id$camp <- as.character(camp_id$camp)
 ## Join with camp IDs
 od <- od %>% inner_join(camp_id) %>%
   mutate(t = day + 1) %>%
-  arrange(id)
+  arrange(id) %>%
+  filter(cases > 0)
 
 pd <- pd %>% inner_join(camp_id) %>%
   arrange(id)
@@ -30,7 +31,7 @@ data_in <- list(C = nrow(camp_id),
                 J = od$id,
                 t = od$t,
                 Y = od$cases,
-                epsilon = 0.3
+                epsilon = 0.6
                 )
 
 
