@@ -8,11 +8,13 @@ header-includes:
 
 # Introduction
 
-In this paper, we construct a model of norovirus (NoV) transmission during a large outbreak to understand the role of individual-level heterogeneity in infectiousness on the overall outbreak attack rate and outbreak transmission dynamics. To do this, we constructed an individual-level, stochastic statistical model of individual-level NoV transmission. To account for heterogeneity in individual infection potential, we adopted the framework originally described by Lloyd-Smith et al. [@Lloyd-Smith:2005aa] to account for the impact of *superspreading* events among emerging infectious diseases. 
+In this paper, we construct a model of norovirus (NoV) transmission during a large outbreak to understand the role of 1) between-individual heterogeneity in infectiousness and 2) heterogeneous patterns of contact, on the overall outbreak attack rate and outbreak transmission dynamics. To do this, we re-analyzed data from a large Norovirus outbreaks first presented by Heijne et al. [@Heijne2009] using an individual-level, stochastic model of individual-level NoV transmission. To account for heterogeneity in individual infection potential and potential superspreading, we adopted the heterogeneous branching-process framework originally described by Lloyd-Smith et al. [@Lloyd-Smith:2005aa] to allow for negative feedback, i.e. susceptible depletion.
 
 # Data
 
-We analyze data previously published by Heijne et al. [@Heijne2009] from a large Norovirus outbreak during a scout jamboree in the Netherlands in 2004. Figure \ref{fig:allcases} shows the distribution of cases over time during the outbreak, and Figure \ref{fig:campcases} shows the evolution of the outbreak within the seven individual sub-camps affected during the outbreak.
+We analyze data previously published by Heijne et al. [@Heijne2009] from a large Norovirus outbreak during a scout jamboree in the Netherlands in 2004. Figure \ref{fig:allcases} shows the distribution of cases over time during the outbreak, and Figure \ref{fig:campcases} shows the evolution of the outbreak within the seven individual sub-camps affected during the outbreak. In this earlier analysis, Heijne et al. used a generation time approach in which the likelihood that individual $i$ infected individual $j$ is a function of the time lag between onset of symptoms in $i$ and $j$. This approach is well-suited to outbreak contexts in which susceptible depletion is negligible, and was originally proposed to measure the pandemic potential of emerging infections, such as monkeypox. 
+
+In the context of a large norovirus outbreak, this approach does not allow for contact heterogeneity or for susceptible depletion to be the cause of an outbreak ending. This issue is particularly acute in the context of the outbreak originally analyzed by Heijne et al. in which individuals were nested within seven camps within the larger scout jamboree. In this case, it is critical to understand whether the outbreak ended as a result of local susceptible depletion, rather than outbreak interventions, as suggested by Heijne et al. For example, Figure \ref{fig:heijne} reproduces the results from the original paper, which show a steep decline in the effective reproduction number $R_{eff}$ after the first day of the outbreak, with this value declining past the critical value of 1 around the time at which outbreak interventions were instituted. 
 
 # Methods
 
@@ -79,7 +81,7 @@ $$
 Pr(z_i = t) = \sum_{j = 1}^{z_i - 1} \frac{Pr(j = t^*_{ij}) Pr(x = z_i-j)}{\sum_{k = 1}^{z_i-1}{Pr(x = z_i - k)}}
 $$
 
-Then, for all camps, $j$, the probability of observing $y_j2$ cases on day 2, $y_j3$ on day 3, etc, is:
+Then, for all camps, $j$, the probability of observing $y_{j2}$ cases on day 2, ${y_j3}$ on day 3, etc, is:
 
 $$
 Pr(y_{jt}) = \prod_{i = 1}^{C} \prod_{t = 1}^{T} y_{it} Pr(z_i = i)
@@ -98,6 +100,7 @@ $$
 ```{r, warning=FALSE, message=FALSE, echo=FALSE}
 require(readr)
 require(dplyr)
+require(rstan)
 ## Load pars
 
 z <- read_csv("../output/scalar_pars.csv")
@@ -105,14 +108,22 @@ z <- read_csv("../output/scalar_pars.csv")
 
 zeta <- z %>% filter(par == "zeta")
 
-beta <- z %>% filter(par == "log_beta_mu")
+beta <- z %>% filter(par == "log_beta_mu") 
 beta_shape <- z%>% filter(par == "beta_shape")
+
+zz <- readRDS("../output/nov_model.Rds") %>% extract
+
+camp_avg <- 1.0-exp(-100*exp(zz$log_beta_mu)*zz$zeta)
+camp_ci <- quantile(camp_avg, probs = c(0.025, 0.975))
 ```
 
-Individuals deposit approximately `r sprintf("%0.0f", 100*zeta[,"median"])` percent of their infectiousness within their camp of residence (95% CI = `r sprintf("%0.0f, %0.0f", 100*zeta[,"low_ci"], 100*zeta[,"high_ci"])`).
+On a per-capita basis, the rate of within-camp transmission is approximately `r sprintf("%0.0f",zeta[,"median"])` times greater than the per-capita rate of transmission across *between-camp* contacts (95% CI = `r sprintf("%0.0f, %0.0f", zeta[,"low_ci"], zeta[,"high_ci"])`).
 
-The average value of R across all individuals is `r sprintf("%0.2f", exp(beta[,"median"]))` (95% CI = `r sprintf("%0.2f, %0.2f", exp(beta[,"low_ci"]), exp(beta[,"high_ci"]))`). However, the value of $r_i$ across individuals is highly dispersed $\alpha$ = `r sprintf("%0.2f", beta_shape[,"median"])` (95% CI = `r sprintf("%0.2f, %0.2f", beta_shape[,"low_ci"], beta_shape[,"high_ci"])`), indicating wide heterogeneity in infectious across individuals.
+The average betwen-camp probability of transmission per 100 contacts is `r sprintf("%0.2f", 1.0-exp(-100*exp(beta[,"median"])))` (95% CI = `r sprintf("%0.2f, %0.2f", 1.0-exp(-100*exp(beta[,"low_ci"])), 1.0-exp(-100*exp(beta[,"high_ci"])))`).
 
+The average *within-camp* probability of transmission per 100 contacts is `r sprintf("%0.2f", median(camp_avg))`. (95% CI = `r sprintf("%0.2f, %0.2f", camp_ci[1], camp_ci[2])`)
+
+However, the value of $r_i$ across individuals is highly dispersed $\alpha$ = `r sprintf("%0.2f", beta_shape[,"median"])` (95% CI = `r sprintf("%0.2f, %0.2f", beta_shape[,"low_ci"], beta_shape[,"high_ci"])`), indicating wide heterogeneity in infectiousness across individuals.
 
 
 # Figures & Tables
@@ -127,9 +138,17 @@ The average value of R across all individuals is `r sprintf("%0.2f", exp(beta[,"
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.6\textwidth]{output/figures/cases_by_camp.pdf}
-\caption{Estimated daily avg. reproductive number across all camps. Dashed lines indicated 95\% posterior credible intervals. Dotted line indicates critical value of R = 1.}
+\caption{Number of incident cases in each camp by day of outbreak. Dotted vertical line indicates the start of outbreak interventions.}
 \label{fig:campcases}
 \end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.6\textwidth]{images/heijne_eid_daily_r.png}
+\caption{Estimated daily $R_{eff}$ from Heijne et al. 2009}
+\label{fig:heijne}
+\end{figure}
+
 
 \begin{figure}
 \centering
@@ -145,6 +164,6 @@ The average value of R across all individuals is `r sprintf("%0.2f", exp(beta[,"
 \label{fig:campr}
 \end{figure}
 
-\newpage
+\clearpage
 
 # References

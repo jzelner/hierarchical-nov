@@ -25,7 +25,9 @@ g <- ggplot(daily_r) + geom_line(aes(x=day, y = median)) +
   geom_vline(xintercept = 3, linetype = "dashed") + 
   xlab("Outbreak day") +
   ylab("Avg. R across all infectious individuals") +
-  theme_bw() 
+  theme_bw() +
+  scale_x_continuous(breaks = min(daily_r$day):max(daily_r$day),
+                     labels = min(daily_r$day):max(daily_r$day))
 
 ggsave("output/figures/daily_avg_r.pdf", width = 6, height = 3)
 
@@ -58,7 +60,10 @@ camp_g <- ggplot(all_camp_r) +
   facet_grid( camp ~ .) +
   theme_bw() +
   xlab("Day") +
-  ylab("Daily reproduction number") 
+  ylab("Daily reproduction number") +
+  scale_x_continuous(breaks = min(daily_r$day):max(daily_r$day),
+                     labels = min(daily_r$day):max(daily_r$day))
+
 #  coord_cartesian(ylim=c(0,40)) 
 
 ggsave("output/figures/daily_camp_r.pdf", width = 6, height = 8)

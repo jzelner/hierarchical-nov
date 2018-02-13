@@ -108,7 +108,7 @@ model {
         log_ll[tt] = log_ll[tt] + elogs[tt] - total_e;
       }
 
-      target += log_sum_exp(log_ll);
+      target += Y[i]*log_sum_exp(log_ll);
     }
   }
 

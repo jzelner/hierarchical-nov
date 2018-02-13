@@ -11,11 +11,13 @@ camp_d$camp[is.na(camp_d$camp)] <- "UNK"
 camp_g <- ggplot(camp_d, aes(x=day, y = cases)) +
   geom_point() +
   geom_line() +
-  geom_vline(xintercept = 2, linetype = "dashed") +
+  geom_vline(xintercept = 3, linetype = "dashed") +
   facet_grid( camp ~ .) +
   theme_bw() +
   xlab("Days since start of outbreak") +
-  ylab("Cases in camp")
+  ylab("Cases in camp") + 
+  scale_x_continuous(breaks = 0:15,
+                   labels = 0:15)
 
 ggsave("output/figures/cases_by_camp.pdf", width = 6, height = 8)
 
@@ -27,9 +29,11 @@ all_g <- ggplot(all_d, aes(x = day, y = cases)) +
   geom_point() +
   geom_line() +
     theme_bw() +
-  geom_vline(xintercept = 2, linetype = "dashed") +
+  geom_vline(xintercept = 3, linetype = "dashed") +
   xlab("Days since start of outbreak") +
-  ylab("Total cases")
+  ylab("Total cases") +
+  scale_x_continuous(breaks = 0:15,
+                   labels = 0:15)
 
 
 

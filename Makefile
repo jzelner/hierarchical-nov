@@ -45,7 +45,7 @@ endif
 CSL := presentations/config/american-journal-of-epidemiology.csl
 ############################################################
 ## Generic rule for translating Rmd to markdown
-output/%.md : presentations/%.Rmd
+output/%.md : presentations/%.Rmd output/scalar_pars.csv
 	@echo ----Translating abstract text from RMD to Markdown----
 	@mkdir -p $(@D)
 	Rscript \
@@ -73,7 +73,7 @@ output/%.pdf : output/%.tex $(FIGURES)
 	mv $(@F) $(@D)/.
 
 ## Generic rule for translating tex to pdf
-output/%.pdf : presentations/%.tex
+output/%.pdf : presentations/%.tex 
 	@echo ----Generating $(@F)----
 	latexmk -$(TEXENGINE) $< > texout.txt
 	mv $(@F) $(@D)/.
