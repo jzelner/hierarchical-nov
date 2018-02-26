@@ -14,7 +14,7 @@ daily_r <- z$daily_avg_r %>%
 colnames(daily_r) <- c("low_ci", "median", "high_ci")
 daily_r$day <- 1:nrow(daily_r)
 daily_r <- daily_r %>% select(day, low_ci, median, high_ci) %>%
-  filter(day <= 10)
+  filter(day <= 11)
 
 daily_r$day <- daily_r$day -1
 
@@ -43,7 +43,7 @@ daily_r <- z$camp_r[,i,]%>%
 colnames(daily_r) <- c("low_ci", "median", "high_ci")
 daily_r$day <- 1:nrow(daily_r)
 daily_r$camp <- i
-daily_r <- daily_r %>% select(camp,day, low_ci, median, high_ci) %>% filter(day <= 10)
+daily_r <- daily_r %>% select(camp,day, low_ci, median, high_ci) %>% filter(day <= 11)
 
 all_camp_r <- rbind(all_camp_r, daily_r)
 

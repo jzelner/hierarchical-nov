@@ -38,6 +38,7 @@ parameters {
   real<lower=0> beta_shape; //Shape of distribution of betas
   real<lower=0> zeta; //Per-capita exposure to individuals outside camp
   real<lower=0, upper = 1> gamma; //Shape of infectious period
+  real zeta_pars[2];
 
 }
 
@@ -58,19 +59,16 @@ transformed parameters {
 
   //Sum across camps to get force of infection for each day
   for (c in 1:C) { //Repeat for each camp
-    for (c2 in 1:C) {
-##      real a = c == c2 ? zeta : 1;
-      real real_t = 1;
       for (tb in 1:T) {
-        real b_t = c == c2 ? beta_mat[c,tb] : zeta;
+        real b_t = beta_mat[c,tb];
+        real day_exposure = (b_t*Ymat[c,tb]) + zeta*(sum(col(Ymat,tb))-Ymat[c,tb]);
         for (te in tb:T) {
           int dayindex = te-tb+1;
-          lambda[c2,te] = lambda[c2,te] + b_t*Ymat[c,tb]*inf_day[dayindex];
+          lambda[c,te] = lambda[c,te] + day_exposure*inf_day[dayindex];
         }
-        real_t = real_t + 1;
       }
     }
-  }
+
 
   //Now calculate cumulative force of infection for individuals
   //infected on each day
@@ -87,12 +85,13 @@ model {
   }
   log_beta_mu ~ normal(0, 2);
   beta_shape ~ normal(4,1);
-  zeta ~ normal(0, 1);
+  ##zeta ~ lognormal(zeta_pars[1], exp(zeta_pars[2]));
   //Iterate over camps
   for (c in 1:C) {
     //Log-likelihood for survival
     target += -S[c]*c_lambda[c,T];
   }
+
 
   for (i in 1:N) {
     if (t[i] > 1) {
