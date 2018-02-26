@@ -59,13 +59,15 @@ transformed parameters {
   //Sum across camps to get force of infection for each day
   for (c in 1:C) { //Repeat for each camp
     for (c2 in 1:C) {
-      real a = c == c2 ? zeta : 1;
+##      real a = c == c2 ? zeta : 1;
+      real real_t = 1;
       for (tb in 1:T) {
         real b_t = c == c2 ? beta_mat[c,tb] : zeta;
         for (te in tb:T) {
           int dayindex = te-tb+1;
           lambda[c2,te] = lambda[c2,te] + b_t*Ymat[c,tb]*inf_day[dayindex];
         }
+        real_t = real_t + 1;
       }
     }
   }
@@ -85,7 +87,7 @@ model {
   }
   log_beta_mu ~ normal(0, 2);
   beta_shape ~ normal(4,1);
-  //zeta ~ normal(1, 5);
+  zeta ~ normal(0, 1);
   //Iterate over camps
   for (c in 1:C) {
     //Log-likelihood for survival
@@ -128,9 +130,11 @@ generated quantities {
   {
 
     for (c in 1:C) {
+      real real_t = 1;
       for (tt in 1:T) {
         real active_y = Ymat[c,tt] > 0 ? 1 : 0;
-        camp_r[c,tt] = P[c]*active_y*beta_mat[c, tt] + (total_pop - P[c])*zeta;
+        camp_r[c,tt] = active_y*(P[c]*beta_mat[c, tt] + (total_pop - P[c])*zeta);
+        real_t = real_t + 1;
       }
     }
     beta_Y = camp_r .* Ymat;
