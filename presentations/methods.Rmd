@@ -45,7 +45,7 @@ When $t \ge z_i$, $g(t-z_i)$ is the proportion of the infectiousness of individu
 We denote the parameter $\zeta$ to be the ratio of an individual's per-capita infectiousness for within-camp contacts ($i = j$) vs. outside-camp contacts ($i \ne j$).  We denote the force of infection in camp $j$ at time $t$ as $\lambda_{j,t}$ and can write this as follows:
 
 $$
-\lambda_{jt} =  \sum_{k \le t}\left( \zeta \left({r_{jk} y_{jk}}\right) g(t-k) + \sum_{i \ne j}\left(r_{ik} y_{ik}\right) g(t-k)\right)
+\lambda_{jt} =  \sum_{k \le t}g(t-k) \left( \bar{\beta}_{jk} y_{jk}+ \zeta \sum_{i \ne j} y_{ik} \right)
 $$
 
 ### Likelihood

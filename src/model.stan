@@ -44,6 +44,8 @@ parameters {
 
 transformed parameters {
   matrix[C,T] lambda = rep_matrix(0, C, T); //Daily per-capita force of infection for each camp
+  matrix[C,T] lambda_w = rep_matrix(0, C, T);
+  matrix[C,T] lambda_b = rep_matrix(0, C, T);
   matrix[C,T] c_lambda = rep_matrix(0, C, T);
   matrix[C,T] beta_mat = rep_matrix(0, C, T);
   vector<lower=0, upper=1>[T] inf_day; //Distribution of infectiousness by day
@@ -61,10 +63,13 @@ transformed parameters {
   for (c in 1:C) { //Repeat for each camp
       for (tb in 1:T) {
         real b_t = beta_mat[c,tb];
-        real day_exposure = (b_t*Ymat[c,tb]) + zeta*(sum(col(Ymat,tb))-Ymat[c,tb]);
+        real db = (b_t*Ymat[c,tb]);
+        real dz = zeta*(sum(col(Ymat,tb))-Ymat[c,tb]);
         for (te in tb:T) {
           int dayindex = te-tb+1;
-          lambda[c,te] = lambda[c,te] + day_exposure*inf_day[dayindex];
+          lambda_w[c,te] = lambda_w[c, te] + db*inf_day[dayindex];
+          lambda_b[c,te] = lambda_b[c, te] + dz*inf_day[dayindex];
+          lambda[c,te] = lambda[c,te] + lambda_w[c, te] + lambda_b[c, te];
         }
       }
     }
@@ -125,6 +130,8 @@ generated quantities {
   vector[T] daily_avg_r;
   matrix[C,T] camp_r;
   matrix[C,T] beta_Y;
+  matrix[C,T] lambda_within;
+##  vector[T] p_within_inf;
   vector[C] c_weights = P / total_pop;
   {
 
@@ -133,7 +140,7 @@ generated quantities {
       for (tt in 1:T) {
         real active_y = Ymat[c,tt] > 0 ? 1 : 0;
         camp_r[c,tt] = active_y*(P[c]*beta_mat[c, tt] + (total_pop - P[c])*zeta);
-        real_t = real_t + 1;
+        lambda_within[c,tt] = lambda_w[c,tt]/(lambda_b[c,tt]+lambda_w[c,tt]);
       }
     }
     beta_Y = camp_r .* Ymat;
