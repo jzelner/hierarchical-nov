@@ -25,7 +25,7 @@ dp_mat <- matrix(rep(dp_density, each = nsamp), nrow = nsamp)
 
 all_p <- data.frame()
 for (i in 1:num_camps) {
- 
+## ADD ITER`` 
     for (t in 2:max_T) {
     lambda_c <- z$lambda[,i,1:(t-1)]
    
@@ -51,4 +51,4 @@ inf_df <- inner_join(all_p, data_df)
 inf_df$inf_day <- as.numeric(as.character(inf_df$inf_day))
 
 ## Weighted inf day
-zz <- inf_df %>% group_by(onset_day, camp) %>% summarize(pp = (sum(inf_day*p/1000)))
+zz <- inf_df %>% group_by(onset_day, camp) %>% summarize(pp = mean(p))
