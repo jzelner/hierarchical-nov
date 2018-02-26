@@ -25,8 +25,10 @@ transformed data {
   }
 
   //Pre-load latency log-lls
-  for (i in 1:T) {
-    e_log_ll[i] = log(pow((1-epsilon),i-1)*epsilon);
+  e_log_ll[1] = lognormal_lcdf(1 | 1, 1.5);
+  for (i in 2:T) {
+#    e_log_ll[i] = log(pow((1-epsilon),i-1)*epsilon);
+    e_log_ll[i] = log(lognormal_cdf(i, 1, 1.5)-lognormal_cdf(i-1, 1, 1.5));
   }
 }
 
@@ -45,9 +47,9 @@ transformed parameters {
   matrix[C,T] beta_mat = rep_matrix(0, C, T);
   vector<lower=0, upper=1>[T] inf_day; //Distribution of infectiousness by day
 
-  for (i in 1:N) {
-      beta_mat[J[i],t[i]] = beta[i];
-  }
+   for (i in 1:N) {
+       beta_mat[J[i],t[i]] = beta[i];
+   }
   //Pre-calculate proportion of infectiousness on each day since onset
   inf_day[1] = gamma; //exponential_cdf(1, gamma);
   for (i in 2:T) {
@@ -59,7 +61,7 @@ transformed parameters {
     for (c2 in 1:C) {
       real a = c == c2 ? zeta : 1;
       for (tb in 1:T) {
-        real b_t = a*beta_mat[c,tb];
+        real b_t = c == c2 ? beta_mat[c,tb] : zeta;
         for (te in tb:T) {
           int dayindex = te-tb+1;
           lambda[c2,te] = lambda[c2,te] + b_t*Ymat[c,tb]*inf_day[dayindex];
@@ -78,11 +80,12 @@ transformed parameters {
 model {
 
   //Model pars
-  beta ~ gamma(beta_shape, beta_shape/exp(log_beta_mu));
+  for (i in 1:N) {
+    beta[i] ~ gamma(beta_shape*Y[i], (beta_shape*Y[i])/exp(log_beta_mu));
+  }
   log_beta_mu ~ normal(0, 2);
-  
-  beta_shape ~ normal(1,1);
-  #zeta ~ normal(1, 5);
+  beta_shape ~ normal(4,1);
+  //zeta ~ normal(1, 5);
   //Iterate over camps
   for (c in 1:C) {
     //Log-likelihood for survival
@@ -126,8 +129,8 @@ generated quantities {
 
     for (c in 1:C) {
       for (tt in 1:T) {
-        real active_y = Ymat[c,tt] > 0 ? beta_mat[c,tt] : 0;
-        camp_r[c,tt] = P[c]*(zeta*active_y) + (total_pop - P[c])*active_y;
+        real active_y = Ymat[c,tt] > 0 ? 1 : 0;
+        camp_r[c,tt] = P[c]*active_y*beta_mat[c, tt] + (total_pop - P[c])*zeta;
       }
     }
     beta_Y = camp_r .* Ymat;

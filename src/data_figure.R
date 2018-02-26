@@ -19,7 +19,7 @@ camp_g <- ggplot(camp_d, aes(x=day, y = cases)) +
   scale_x_continuous(breaks = 0:15,
                    labels = 0:15)
 
-ggsave("output/figures/cases_by_camp.pdf", width = 6, height = 8)
+ggsave("output/figures/cases_by_camp.pdf", width = 5, height = 8)
 
 all_d <- camp_d %>%
   group_by(day) %>%
