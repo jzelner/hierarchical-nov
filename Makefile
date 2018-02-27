@@ -27,6 +27,15 @@ output/figures/daily_avg_r.pdf : src/avg_r_plot.R output/nov_model.Rds
 output/scalar_pars.csv : src/parameter_ci.R output/nov_model.Rds
 	@mkdir -p $(@D)
 	./$<
+	
+output/infection_source.Rds : src/inf_source.R output/nov_model.Rds output/nov_model_input.Rds
+	@mkdir -p $(@D)
+	./$<
+	
+output/figures/p_by_camp.pdf : src/p_by_camp.R output/infection_source.Rds
+	@mkdir -p $(@D)
+	./$<
+	
 ###############################################################################
 ## Below here is for generating output documents
 
@@ -45,7 +54,7 @@ endif
 CSL := presentations/config/american-journal-of-epidemiology.csl
 ############################################################
 ## Generic rule for translating Rmd to markdown
-output/%.md : presentations/%.Rmd output/scalar_pars.csv
+output/%.md : presentations/%.Rmd output/scalar_pars.csv output/infection_source.Rds
 	@echo ----Translating abstract text from RMD to Markdown----
 	@mkdir -p $(@D)
 	Rscript \

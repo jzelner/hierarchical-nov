@@ -87,13 +87,7 @@ $$
 Pr(y_{jt}) = \prod_{i = 1}^{C} \prod_{t = 1}^{T} y_{it} Pr(z_i = i)
 $$
 
-## Calculating reproduction numbers
 
-We can calculate the individual reproduction number for each infectious individual by multiplying the baseline per-capita rate of infection by the number of people each infectious individual is exposed to both within their camp of residence, and in other camps, as follows:
-
-$$
-r_{jt} = \beta_{jt} \left(\zeta n_j + \sum_{i \ne j}^{C} n_i\right)
-$$
 
 
 # Results
@@ -101,6 +95,7 @@ $$
 require(readr)
 require(dplyr)
 require(rstan)
+require(glue)
 ## Load pars
 
 z <- read_csv("../output/scalar_pars.csv")
@@ -113,18 +108,50 @@ beta_shape <- z%>% filter(par == "beta_shape")
 
 zz <- readRDS("../output/nov_model.Rds") %>% extract
 
-camp_avg <- 1.0-exp(-100*exp(zz$log_beta_mu)*zz$zeta)
+camp_avg <- 1000*exp(zz$log_beta_mu)
+between_avg <- 1000*zz$zeta
+
 camp_ci <- quantile(camp_avg, probs = c(0.025, 0.975))
+between_ci <- quantile(between_avg, probs = c(0.025, 0.975))
+
+## Load probability of infection within camp
+infection_source <- readRDS("../output/infection_source.Rds")
+
+inf_q <- infection_source$within_camp$p_within %>% quantile(probs = c(0.025, 0.5, 0.975))
 ```
 
-On a per-capita basis, the rate of within-camp transmission is approximately `r sprintf("%0.0f",zeta[,"median"])` times greater than the per-capita rate of transmission across *between-camp* contacts (95% CI = `r sprintf("%0.0f, %0.0f", zeta[,"low_ci"], zeta[,"high_ci"])`).
-
-The average betwen-camp probability of transmission per 100 contacts is `r sprintf("%0.2f", 1.0-exp(-100*exp(beta[,"median"])))` (95% CI = `r sprintf("%0.2f, %0.2f", 1.0-exp(-100*exp(beta[,"low_ci"])), 1.0-exp(-100*exp(beta[,"high_ci"])))`).
-
-The average *within-camp* probability of transmission per 100 contacts is `r sprintf("%0.2f", median(camp_avg))`. (95% CI = `r sprintf("%0.2f, %0.2f", camp_ci[1], camp_ci[2])`)
+The expected number of *between-camp* transmission events per 1000 contacts is `r sprintf("%0.2f", median(between_avg))`. (95% CI = `r sprintf("%0.2f, %0.2f", between_ci[1], between_ci[2])`). By contrast, the average *within-camp* probability of transmission per 1000 contacts is `r sprintf("%0.2f", median(camp_avg))`. (95% CI = `r sprintf("%0.2f, %0.2f", camp_ci[1], camp_ci[2])`)
 
 However, the value of $r_i$ across individuals is highly dispersed $\alpha$ = `r sprintf("%0.2f", beta_shape[,"median"])` (95% CI = `r sprintf("%0.2f, %0.2f", beta_shape[,"low_ci"], beta_shape[,"high_ci"])`), indicating wide heterogeneity in infectiousness across individuals.
 
+## Calculating effective reproduction numbers
+
+We can calculate the individual effective reproduction number, $r_{jt}$ for each infectious individual by multiplying the baseline per-capita rate of infection by the number of people each infectious individual is exposed to both within their camp of residence, and in other camps, as follows:
+
+$$
+r_{jt} = \beta_{jt} n_j + \zeta \sum_{i \ne j}^{C} n_i
+$$
+
+Figure \ref{fig:dailyr} shows the evolution of $R_{eff}$ across all camps over the course of the outbreak. Figure \ref{fig:campr} shows this quantity for each camp individually. Notably, transmission within each camp is characterized by sporadic super-spreading events, rather than a time-constant rate of infectiousness.
+
+## Between vs. within-camp transmission
+
+The differences in the magnitude of the parameters representing within-camp infectiousness, $\beta_{jt}$ and between-camp transmission, $\zeta$ are difficult to interpet directly. This is because at any given time, there may be many more prevalent cases outside of an individual's camp than within it. As a result, even if the rate of transmission is many times lower, a high proportion of cases may still be acocunted for by between-camp transmission. To understand the relative contributions of within vs. between camp transmission, we use the method described by Cauchemez & Ferguson [@Cauchemez:2011aa]. 
+
+To do this, we calculate the total force of infection between-camp, denoted $\lambda_{B}$ and, within-camp, denoted $\lambda_{W}$. So:
+
+$$
+\lambda^{W}_j = \sum_{t < T} y_{jt} \bar{\beta}_{jt}
+$$
+
+And:
+
+$$
+\lambda^{B}_j = \zeta \sum_{t < T} \sum_{i \ne j} y_{it}
+$$
+For each camp, we can then estimate the proportion of cases in camp $j$ acquired in camp $j$ as $\tau_{j} = \lambda^{W}_{j}/(\lambda^{W}_{j} + \lambda^{B}_{J})$. We can then estimate the average prortion of infections acquired within-camp as a weighted sum across camps, $\bar{\tau} = \sum_{i=1}^{j} p_j \tau_j$, where $p_j$ is the proportion of total cases in camp $j$.
+
+When we do this, we find that across all camps, approximately `r glue("{pct}%", pct = sprintf("%0.0f", 100*inf_q[2]))` infections were acquired within-camp (95% CI = `r glue("{low_ci}%,{high_ci}%", low_ci = sprintf("%0.0f", 100*inf_q[1]), high_ci = sprintf("%0.0f", 100*inf_q[3]))`).
 
 # Figures & Tables
 
