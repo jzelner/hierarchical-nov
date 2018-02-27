@@ -151,7 +151,7 @@ $$
 $$
 For each camp, we can then estimate the proportion of cases in camp $j$ acquired in camp $j$ as $\tau_{j} = \lambda^{W}_{j}/(\lambda^{W}_{j} + \lambda^{B}_{J})$. We can then estimate the average prortion of infections acquired within-camp as a weighted sum across camps, $\bar{\tau} = \sum_{i=1}^{j} p_j \tau_j$, where $p_j$ is the proportion of total cases in camp $j$.
 
-When we do this, we find that across all camps, approximately `r glue("{pct}%", pct = sprintf("%0.0f", 100*inf_q[2]))` infections were acquired within-camp (95% CI = `r glue("{low_ci}%,{high_ci}%", low_ci = sprintf("%0.0f", 100*inf_q[1]), high_ci = sprintf("%0.0f", 100*inf_q[3]))`).
+When we do this, we find that across all camps, approximately `r glue("{pct}%", pct = sprintf("%0.0f", 100*inf_q[2]))` infections were acquired within-camp (95% CI = `r glue("{low_ci}%,{high_ci}%", low_ci = sprintf("%0.0f", 100*inf_q[1]), high_ci = sprintf("%0.0f", 100*inf_q[3]))`). Figure \ref{fig:camp_p} illustrates variation in within vs. between-camp rates of infection as a function of the total incidence acocunted for by that camp.
 
 # Figures & Tables
 
@@ -190,6 +190,14 @@ When we do this, we find that across all camps, approximately `r glue("{pct}%", 
 \caption{Estimated daily avg. reproductive number for each camp.Vertical bar indicates beginning of hygiene interventions.}
 \label{fig:campr}
 \end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=0.7\textwidth]{output/figures/p_by_camp.pdf}
+\caption{Proportion of infections acquired within-camp, as a function of the total proportion of incident cases within that camp. Points indicated posterior medians; vertical bars indicated 95\% posterior credible intervals. Each point is labelled by the camp in Figure \ref{fig:campcases} it corresponds to.}
+\label{fig:camp_p}
+\end{figure}
+
 
 \clearpage
 
