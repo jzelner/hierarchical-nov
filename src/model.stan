@@ -14,10 +14,17 @@ transformed data {
   vector<lower=0>[C] S; //Number of survivors in each camp at end of outbreak
   vector[T] e_log_ll;
   real total_pop = sum(P);
+  matrix[C,C] bc_pop;
   for (i in 1:N) {
     Ymat[J[i],t[i]] = Y[i];
   }
 
+  for (i in 1:C) {
+    for (j in i:C) {
+     bc_pop[i,j] = i == j ? 0 : 1/(sum(P)-P[j]);
+     bc_pop[j,i] = j == i ? 0 : 1/(sum(P)-P[i]);
+    }
+  }
 
   //Calculate number of survivors at end
   for (i in 1:C) {
@@ -51,7 +58,7 @@ transformed parameters {
   vector<lower=0, upper=1>[T] inf_day; //Distribution of infectiousness by day
 
    for (i in 1:N) {
-       beta_mat[J[i],t[i]] = beta[i];
+       beta_mat[J[i],t[i]] = beta[i]/P[J[i]];
    }
   //Pre-calculate proportion of infectiousness on each day since onset
   inf_day[1] = gamma; //exponential_cdf(1, gamma);
@@ -64,7 +71,9 @@ transformed parameters {
       for (tb in 1:T) {
         real b_t = beta_mat[c,tb];
         real db = (b_t*Ymat[c,tb]);
-        real dz = zeta*(sum(col(Ymat,tb))-Ymat[c,tb]);
+        //Get contributions from outside
+        real dz = zeta*sum(col(bc_pop,c).*col(Ymat,tb));
+        
         for (te in tb:T) {
           int dayindex = te-tb+1;
           lambda_w[c,te] = lambda_w[c, te] + db*inf_day[dayindex];
@@ -139,7 +148,7 @@ generated quantities {
       real real_t = 1;
       for (tt in 1:T) {
         real active_y = Ymat[c,tt] > 0 ? 1 : 0;
-        camp_r[c,tt] = active_y*(P[c]*beta_mat[c, tt] + (total_pop - P[c])*zeta);
+        camp_r[c,tt] = active_y*(P[c]*beta_mat[c, tt] + (total_pop - P[c])*(zeta/(sum(P)-P[c])));
         lambda_within[c,tt] = lambda_w[c,tt]/(lambda_b[c,tt]+lambda_w[c,tt]);
       }
     }
