@@ -7,14 +7,14 @@ header-includes:
 --- 
 
 # Introduction
+Norovirus (NoV) outbreaks are often characterized by explosive and unpredictable dynamics, as well as patterns of recrudescence in which a declining outbreak resurges. In this paper, we construct a new model of norovirus (NoV) transmission during a large outbreak to understand the role of 1) between-individual heterogeneity in infectiousness and 2) heterogeneous patterns of contact, on the overall outbreak attack rate and outbreak transmission dynamics. To do this, we re-analyzed data from a large Norovirus outbreaks first presented by Heijne et al. [@Heijne2009] using an individual-level, stochastic model of individual-level NoV transmission. To account for heterogeneity in individual infection potential and potential superspreading, we adapted the heterogeneous branching-process framework originally described by Lloyd-Smith et al. [@Lloyd-Smith:2005aa] to allow for finite numbers of susceptibles, and to accomodate contact heterogeneity. 
 
-In this paper, we construct a model of norovirus (NoV) transmission during a large outbreak to understand the role of 1) between-individual heterogeneity in infectiousness and 2) heterogeneous patterns of contact, on the overall outbreak attack rate and outbreak transmission dynamics. To do this, we re-analyzed data from a large Norovirus outbreaks first presented by Heijne et al. [@Heijne2009] using an individual-level, stochastic model of individual-level NoV transmission. To account for heterogeneity in individual infection potential and potential superspreading, we adopted the heterogeneous branching-process framework originally described by Lloyd-Smith et al. [@Lloyd-Smith:2005aa] to allow for negative feedback, i.e. susceptible depletion.
+Such contact heterogeneity, in combination with wide heterogeneity in individual infectiousness, may help to explain the "explosive, but self-limiting" character of large Norovirus outbreaks. Because transmission is often the result of vomiting events, the number of contacts an individual has around the time of illness onset is likely to be a key factor in determining his or her likelihood of either touching off a large outbreak or sustaining an ongoing one. For example, Wikswo et al. [@Wikswo2011] documented a large NoV outbreak in which an individual who vomited during boarding of a cruise ship likely infected many passengers at one time. This individual's impact on the outbreak was likely a function of both the magnitude of the event, i.e. in terms of viral particles shed into the environment, plus the number of individuals she contacted at the time of onset. Given an equally significant vomiting event within her own room, such a passenger would likely have had a diminished epidemiologic impact. 
 
 # Data
 
-We analyze data previously published by Heijne et al. [@Heijne2009] from a large Norovirus outbreak during a scout jamboree in the Netherlands in 2004. Figure \ref{fig:allcases} shows the distribution of cases over time during the outbreak, and Figure \ref{fig:campcases} shows the evolution of the outbreak within the seven individual sub-camps affected during the outbreak. In this earlier analysis, Heijne et al. used a generation time approach in which the likelihood that individual $i$ infected individual $j$ is a function of the time lag between onset of symptoms in $i$ and $j$. This approach is well-suited to outbreak contexts in which susceptible depletion is negligible, and was originally proposed to measure the pandemic potential of emerging infections, such as monkeypox. 
+We analyze data previously published by Heijne et al. [@Heijne2009] from a large Norovirus outbreak during a scout jamboree in the Netherlands in 2004. Figure \ref{fig:allcases} shows the distribution of cases over time during the outbreak, and Figure \ref{fig:campcases} shows the evolution of the outbreak within the seven individual sub-camps affected during the outbreak. In this earlier analysis, Heijne et al. used a generation time approach in which the likelihood that individual $i$ infected individual $j$ is a function of the time lag between onset of symptoms in $i$ and $j$, and assumed homogeneous patterns of contact between individuals in the different camps. The model employed in the present analysis allows us to look in more detail at the role of heterogeneous contact patterns and susceptible depletion on patterns of transmission in this outbreak, which is characterized by both explosive growth and recrudescence. 
 
-In the context of a large norovirus outbreak, this approach does not allow for contact heterogeneity or for susceptible depletion to be the cause of an outbreak ending. This issue is particularly acute in the context of the outbreak originally analyzed by Heijne et al. in which individuals were nested within seven camps within the larger scout jamboree. In this case, it is critical to understand whether the outbreak ended as a result of local susceptible depletion, rather than outbreak interventions, as suggested by Heijne et al. For example, Figure \ref{fig:heijne} reproduces the results from the original paper, which show a steep decline in the effective reproduction number $R_{eff}$ after the first day of the outbreak, with this value declining past the critical value of 1 around the time at which outbreak interventions were instituted. 
 
 # Methods
 
@@ -26,9 +26,12 @@ We denote the number of incident cases observed on day $t$ in camp $j$ to be $y_
 
 ### Heterogeneous infectiousness 
 
-Each case is assumed to have a *per-capita* infectiousness $\beta_i$ drawn from a gamma distribution reparameterized in terms of the expected value of the per-capita infectiousness, $\beta_{mu}$, and a shape parameter $\beta_{\alpha}$. So, $\beta_i \sim Gamma(\beta_{\mu}, \beta_{\alpha})$. 
+Each case is assumed to have a *per-capita* infectiousness $\beta_i$ drawn from a gamma distribution with shape parameter $\beta_{k}$ and a scale parameter $\beta_{\theta}$. So, $\beta_i \sim Gamma(\beta_{k}, \beta_{\theta})$, and mean value $\beta_{\mu} = \beta_{k} * \beta_{\theta}$.  Because within each camp multiple cases may become infectious on a given day, the values of $\beta_i$ are not individually identifiable. However, we can take advantage of the fact that the sum of $n$ Gamma-distributed variables is Gamma distributed with shape parameter $\beta_{k}*n$ to sample values $\beta_{jt}$ indicating the daily average per-capita infectiousness across all individuals who became infectious in camp $j$ on day $t$. So:
 
-Because within each camp multiple cases may become infectious on a given day, the values of $\beta_i$ are not individually identifiable. However, we can take advantage of the fact that the sum of $n$ Gamma-distributed variables is Gamma distributed with mean $\beta_{\mu} \times n$ to sample values $\beta_{jt}$ indicating the daily average per-capita infectiousness across all individuals who became infectious in camp $j$ on day $t$. 
+\begin{gather*}
+\beta_{jt} = \sum_{i=1}^{y_{jt}} \beta_{i} \\ 
+\beta_{i} \sim Gamma(\beta_{k}y_{jt}, \beta_{\theta})
+\end{gather*}
 
 ### Time-varying infectiousness
 
@@ -136,22 +139,21 @@ Figure \ref{fig:dailyr} shows the evolution of $R_{eff}$ across all camps over t
 
 ## Between vs. within-camp transmission
 
-The differences in the magnitude of the parameters representing within-camp infectiousness, $\beta_{jt}$ and between-camp transmission, $\zeta$ are difficult to interpet directly. This is because at any given time, there may be many more prevalent cases outside of an individual's camp than within it. As a result, even if the rate of transmission is many times lower, a high proportion of cases may still be acocunted for by between-camp transmission. To understand the relative contributions of within vs. between camp transmission, we use the method described by Cauchemez & Ferguson [@Cauchemez:2011aa]. 
-
-To do this, we calculate the total force of infection between-camp, denoted $\lambda_{B}$ and, within-camp, denoted $\lambda_{W}$. So:
+The differences in the magnitude of the parameters representing within-camp infectiousness, $\beta_{jt}$ and between-camp transmission, $\zeta$ are difficult to interpret directly. This is because at any given time, there may be many more prevalent cases outside of an individual's camp than within it. As a result, even if the per-case rate of transmission is many times lower, the force of infection from outside may be significant enough that a large proportion of cases may still be acocunted for by between-camp transmission. To understand the relative contributions of within vs. between camp transmission, we use the method described by Cauchemez & Ferguson [@Cauchemez:2011aa].  To do this, we calculate the force of infection between-camp, denoted $\eta_{B}$ and, within-camp, denoted $\eta_{W}$, experienced by each infected individual. So:
 
 $$
-\lambda^{W}_j = \sum_{t < T} y_{jt} \bar{\beta}_{jt}
+\eta^{W}_j = \sum_{t < T} y^{*}_{jt}y_{jt} \bar{\beta}_{jt}
 $$
 
 And:
 
 $$
-\lambda^{B}_j = \zeta \sum_{t < T} \sum_{i \ne j} y_{it}
+\eta^{B}_j = \zeta \sum_{t < T} y_{jt}^* \sum_{i \ne j} y_{it}
 $$
-For each camp, we can then estimate the proportion of cases in camp $j$ acquired in camp $j$ as $\tau_{j} = \lambda^{W}_{j}/(\lambda^{W}_{j} + \lambda^{B}_{J})$. We can then estimate the average prortion of infections acquired within-camp as a weighted sum across camps, $\bar{\tau} = \sum_{i=1}^{j} p_j \tau_j$, where $p_j$ is the proportion of total cases in camp $j$.
 
-When we do this, we find that across all camps, approximately `r glue("{pct}%", pct = sprintf("%0.0f", 100*inf_q[2]))` infections were acquired within-camp (95% CI = `r glue("{low_ci}%,{high_ci}%", low_ci = sprintf("%0.0f", 100*inf_q[1]), high_ci = sprintf("%0.0f", 100*inf_q[3]))`). Figure \ref{fig:camp_p} illustrates variation in within vs. between-camp rates of infection as a function of the total incidence acocunted for by that camp.
+Where $y^{*}_{it}$ is the number of new *infections* occurring on each day. Since this value is unobserved, we marginalize over the set of infection times corresponding to each incident case to estimate $\eta_{j}^{W}$ and $\eta_{j}^{B}$.  For each camp, we can then estimate the proportion of cases in camp $j$ acquired in camp $j$ as $\tau_{j} = \eta^{W}_{j}/(\eta^{W}_{j} + \eta^{B}_{J})$. We can then estimate the average prortion of infections acquired within-camp as a weighted sum across camps, $\bar{\tau} = \sum_{i=1}^{j} p_j \tau_j$, where $p_j$ is the proportion of all incident cases occurring in camp $j$.
+
+When we do this, we find that across all camps, approximately `r glue("{pct}%", pct = sprintf("%0.0f", 100*inf_q[2]))` of infections were acquired within-camp (95% CI = `r glue("{low_ci}%,{high_ci}%", low_ci = sprintf("%0.0f", 100*inf_q[1]), high_ci = sprintf("%0.0f", 100*inf_q[3]))`). Figure \ref{fig:camp_p} illustrates variation in within vs. between-camp rates of infection as a function of the total incidence acocunted for by that camp. The figure illustrates a pattern compatible with the finding that most transmission is within-camp, and suggests that in the camps (e.g. 4 & 5) that had the fewest cases, seeding from outside of the camp predominated as a source of risk, whereas in those with the greatest share of cases (2 & 3), within-camp transmission predominated.
 
 # Figures & Tables
 
