@@ -56,6 +56,7 @@ transformed parameters {
   matrix[C,T] c_lambda = rep_matrix(0, C, T);
   matrix[C,T] beta_mat = rep_matrix(0, C, T);
   vector<lower=0, upper=1>[T] inf_day; //Distribution of infectiousness by day
+  matrix[C,T] zeta_t = zeta * (bc_pop * Ymat);
 
    for (i in 1:N) {
        beta_mat[J[i],t[i]] = beta[i]/P[J[i]];
@@ -72,7 +73,7 @@ transformed parameters {
         real b_t = beta_mat[c,tb];
         real db = (b_t*Ymat[c,tb]);
         //Get contributions from outside
-        real dz = zeta*sum(col(bc_pop,c).*col(Ymat,tb));
+        real dz = zeta_t[c,tb];
         
         for (te in tb:T) {
           int dayindex = te-tb+1;
