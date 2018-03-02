@@ -18,19 +18,26 @@ We analyze data previously published by Heijne et al. [@Heijne2009] from a large
 
 # Methods
 
-In this section, we outline a stochastic, discrete-time model of NoV transmission within and between sub-camps of the outbreak.
+In this section, we outline a stochastic, discrete-time model of NoV transmission within and between sub-camps of the outbreak. This model is similar to a susceptible-exposed-infectious-recovered (SEIR) model, with key modifications to accomodate between-individual variability in infectiousness.
 
-## Data Model
+We denote the number of *incident* cases observed on day $t$ in camp $j$ to be $y_{jt}$. We denote the unobserved number of *infections* on day $t$ in camp $j$ as $y_{jt}^*$. These values are different because of the latent period between infection and onset of symptoms. Individuals are assumed to be infectious at the beginning of their day of onset. We denote the day of onset of disease for individual $i$ as $z_i$. 
 
-We denote the number of incident cases observed on day $t$ in camp $j$ to be $y_{i,t}$. Individuals are assumed to be infectious at the beginning of their day of onset. We denote the day of onset of disease for individual $i$ as $z_i$. 
+## Modeling the latent period
 
-### Heterogeneous infectiousness 
+We utilize the estimates of the mean and variance of NoV incubation period duration published by Lee et al. [@Lee2013] in their systematic review of incubation periods for viral gastroenteritis. Lee et al. assume that NoV incubation periods follow a log-Normal distribution, with a median incubation time of 1.2 days (95% CI = 1.2, 1.3 days) with a dispersion factor (corresponding to the standard deviation of the underlying normal distribution) of 1.56 (95% CI = 1.49, 1.62). In practice, this means that 95% of cases will become symptomatic within 2.5 days of infection (95% CI 2.4-2.6 days). We use a discrete approximation to this value, denoted as $\Omega(x, \mu, \sigma^2)$, where $G(x | \mu, \sigma^2)$ is the cumulative distribution function (CDF) of the log-Normal distribution, for $x \ge 1$, where $x$ is the difference in days between infection and onset:
 
-Each case is assumed to have a *per-capita* infectiousness $\beta_i$ drawn from a gamma distribution with shape parameter $\beta_{k}$ and a scale parameter $\beta_{\theta}$. So, $\beta_i \sim Gamma(\beta_{k}, \beta_{\theta})$, and mean value $\beta_{\mu} = \beta_{k} * \beta_{\theta}$.  Because within each camp multiple cases may become infectious on a given day, the values of $\beta_i$ are not individually identifiable. However, we can take advantage of the fact that the sum of $n$ Gamma-distributed variables is Gamma distributed with shape parameter $\beta_{k}*n$ to sample values $\beta_{jt}$ indicating the daily average per-capita infectiousness across all individuals who became infectious in camp $j$ on day $t$. So:
+$$
+\Omega(x, \mu, \sigma^2) = G(x | \mu, \sigma^2) - G(x-1 | \mu, \sigma^2)
+$$
+
+## Heterogeneous infectiousness 
+
+Each case is assumed to have an individual within-camp reproduction number $\r_i$ drawn from a gamma distribution with shape parameter $r_{k}$ and a scale parameter $r_{\theta}$. So, $r_i \sim Gamma(r_{k}, r_{\theta})$, and mean value $\bar{R} = r_{k} * r_{\theta}$.  However, because within each camp multiple cases may become infectious on a given day, the values of $\r_i$ for each case are not individually identifiable. However, we can take advantage of the fact that the sum of $n$ Gamma-distributed variables is Gamma distributed with shape parameter $\r_{k}*n$ to sample values $r_{jt}$ indicating the daily total infectiousness across all individuals who became infectious in camp $j$ on day $t$, which we can then use to estimate the daily average reproduction number, $\bar{r}_{jt}$. So, for a given camp, $j$:
 
 \begin{gather*}
-\beta_{jt} = \sum_{i=1}^{y_{jt}} \beta_{i} \\ 
-\beta_{i} \sim Gamma(\beta_{k}y_{jt}, \beta_{\theta})
+r_{jt} = \sum_{i=1}^{y_{jt}} r_{ij} \mathcal{I}(t_{ij} = t) \\ 
+r_{jt} \sim Gamma(r_{k}y_{jt}, r_{\theta}) \\
+\bar{r}_{jt} = r_{jt}/y_{jt}
 \end{gather*}
 
 ### Time-varying infectiousness
@@ -43,53 +50,13 @@ $$
 
 When $t \ge z_i$, $g(t-z_i)$ is the proportion of the infectiousness of individual $i$ deposited on day $t$. Otherwise, when $t < z_i$, this value is equal to zero, i.e. before the individual becomes infectious. The parameter $\gamma$ has a straightforward interpretation as the proportion of the individual's infectiousness deposited on the day of symptom onset, and the proportion of *remaining* infectiousness deposited each day thereafter.
 
-### Force of infection
+## Force of infection
 
 We denote the parameter $\zeta$ to be the ratio of an individual's per-capita infectiousness for within-camp contacts ($i = j$) vs. outside-camp contacts ($i \ne j$).  We denote the force of infection in camp $j$ at time $t$ as $\lambda_{j,t}$ and can write this as follows:
 
 $$
-\lambda_{jt} =  \sum_{k \le t}g(t-k) \left( \bar{\beta}_{jk} y_{jk}+ \zeta \sum_{i \ne j} y_{ik} \right)
+\lambda_{jt} =  \sum_{k \le t}g(t-k) \left( \frac{\bar{r}_{jk} y_{jk}}{n_{j}}+ \zeta \sum_{i \ne j} \frac{y_{ik}}{(N-n_{i})} \right)
 $$
-
-### Likelihood
-
-The likelihood of observing *each* of the $y_{jt}$ cases in camp $j$ on day $t > 1$ is a function of three components: 
-
-1) Likelihood of escaping infection from $t=1$ until the time of infection for case $i$, $t_{i}^*$.
-
-2) Likelihood of infection in camp $j$ at $t = t^*_i$, and,
-
-3) Likelihood of latent period of duration $z_i - t_i^*$, where $z_i$ is the time of onset for case $i$.
-
-The total system likelihood involves a fourth component:
-
-4 ) Likelihood that the $S_j$ individuals in camp $j$ who did not develop disease during the observation period escaped infection from $t = 1$ until time $T$, when the jamboree ended.
-
-The probability that an individual is infected at time $t_i^*$ is a function of a piecewise exponential likelihood, i.e. 1 and 2 above:
-
-$$ 
-Pr(t = t^*_{ij}) = \left(1- e^{-\lambda_{jt}}\right) exp\left(-\sum_{i = 1}^{i < t} \lambda_{ji}\right)
-$$
-
-
-The probability that an individual has a latent period of $z_i - t_i^*$ is described by a geometric distribution with rate parameter $\epsilon$:
-
-$$
-Pr(x  = z_i-t^*_{ij}) = \epsilon (1-\epsilon)^{(z_i-t^*_{ij}-1)}
-$$
-
-For case $i$, the marginal probability - summing over all possible latent periods - that $t = z_i$ is:
-
-$$
-Pr(z_i = t) = \sum_{j = 1}^{z_i - 1} \frac{Pr(j = t^*_{ij}) Pr(x = z_i-j)}{\sum_{k = 1}^{z_i-1}{Pr(x = z_i - k)}}
-$$
-
-Then, for all camps, $j$, the probability of observing $y_{j2}$ cases on day 2, ${y_j3}$ on day 3, etc, is:
-
-$$
-Pr(y_{jt}) = \prod_{i = 1}^{C} \prod_{t = 1}^{T} y_{it} Pr(z_i = i)
-$$
-
 
 
 
@@ -111,8 +78,8 @@ beta_shape <- z%>% filter(par == "beta_shape")
 
 zz <- readRDS("../output/nov_model.Rds") %>% extract
 
-camp_avg <- 1000*exp(zz$log_beta_mu)
-between_avg <- 1000*zz$zeta
+camp_avg <- exp(zz$log_beta_mu)
+between_avg <- zz$zeta
 
 camp_ci <- quantile(camp_avg, probs = c(0.025, 0.975))
 between_ci <- quantile(between_avg, probs = c(0.025, 0.975))
@@ -123,17 +90,11 @@ infection_source <- readRDS("../output/infection_source.Rds")
 inf_q <- infection_source$within_camp$p_within %>% quantile(probs = c(0.025, 0.5, 0.975))
 ```
 
-The expected number of *between-camp* transmission events per 1000 contacts is `r sprintf("%0.2f", median(between_avg))`. (95% CI = `r sprintf("%0.2f, %0.2f", between_ci[1], between_ci[2])`). By contrast, the average *within-camp* probability of transmission per 1000 contacts is `r sprintf("%0.2f", median(camp_avg))`. (95% CI = `r sprintf("%0.2f, %0.2f", camp_ci[1], camp_ci[2])`)
+## Population and within-camp effective reproduction numbers
+
+The average number of *between-camp* transmission events per case is `r sprintf("%0.2f", median(between_avg))`. (95% CI = `r sprintf("%0.2f, %0.2f", between_ci[1], between_ci[2])`). By contrast, the average *within-camp* probability of transmission per 1000 contacts is `r sprintf("%0.2f", median(camp_avg))`. (95% CI = `r sprintf("%0.2f, %0.2f", camp_ci[1], camp_ci[2])`)
 
 However, the value of $r_i$ across individuals is highly dispersed $\alpha$ = `r sprintf("%0.2f", beta_shape[,"median"])` (95% CI = `r sprintf("%0.2f, %0.2f", beta_shape[,"low_ci"], beta_shape[,"high_ci"])`), indicating wide heterogeneity in infectiousness across individuals.
-
-## Calculating effective reproduction numbers
-
-We can calculate the individual effective reproduction number, $r_{jt}$ for each infectious individual by multiplying the baseline per-capita rate of infection by the number of people each infectious individual is exposed to both within their camp of residence, and in other camps, as follows:
-
-$$
-r_{jt} = \beta_{jt} n_j + \zeta \sum_{i \ne j}^{C} n_i
-$$
 
 Figure \ref{fig:dailyr} shows the evolution of $R_{eff}$ across all camps over the course of the outbreak. Figure \ref{fig:campr} shows this quantity for each camp individually. Notably, transmission within each camp is characterized by sporadic super-spreading events, rather than a time-constant rate of infectiousness.
 
@@ -154,6 +115,8 @@ $$
 Where $y^{*}_{it}$ is the number of new *infections* occurring on each day. Since this value is unobserved, we marginalize over the set of infection times corresponding to each incident case to estimate $\eta_{j}^{W}$ and $\eta_{j}^{B}$.  For each camp, we can then estimate the proportion of cases in camp $j$ acquired in camp $j$ as $\tau_{j} = \eta^{W}_{j}/(\eta^{W}_{j} + \eta^{B}_{J})$. We can then estimate the average prortion of infections acquired within-camp as a weighted sum across camps, $\bar{\tau} = \sum_{i=1}^{j} p_j \tau_j$, where $p_j$ is the proportion of all incident cases occurring in camp $j$.
 
 When we do this, we find that across all camps, approximately `r glue("{pct}%", pct = sprintf("%0.0f", 100*inf_q[2]))` of infections were acquired within-camp (95% CI = `r glue("{low_ci}%,{high_ci}%", low_ci = sprintf("%0.0f", 100*inf_q[1]), high_ci = sprintf("%0.0f", 100*inf_q[3]))`). Figure \ref{fig:camp_p} illustrates variation in within vs. between-camp rates of infection as a function of the total incidence acocunted for by that camp. The figure illustrates a pattern compatible with the finding that most transmission is within-camp, and suggests that in the camps (e.g. 4 & 5) that had the fewest cases, seeding from outside of the camp predominated as a source of risk, whereas in those with the greatest share of cases (2 & 3), within-camp transmission predominated.
+
+\clearpage
 
 # Figures & Tables
 
@@ -202,5 +165,50 @@ When we do this, we find that across all camps, approximately `r glue("{pct}%", 
 
 
 \clearpage
+
+# Supplementary Methods
+
+
+## Likelihood
+
+The likelihood of observing *each* of the $y_{jt}$ cases in camp $j$ on day $t > 1$ is a function of three components: 
+
+1) Likelihood of escaping infection from $t=1$ until the time of infection for case $i$, $t_{i}^*$.
+
+2) Likelihood of infection in camp $j$ at $t = t^*_i$, and,
+
+3) Likelihood of latent period of duration $z_i - t_i^*$, where $z_i$ is the time of onset for case $i$.
+
+The total system likelihood involves a fourth component:
+
+4 ) Likelihood that the $S_j$ individuals in camp $j$ who did not develop disease during the observation period escaped infection from $t = 1$ until time $T$, when the jamboree ended.
+
+The probability that an individual is infected at time $t_i^*$ is a function of a piecewise exponential likelihood, i.e. 1 and 2 above:
+
+$$ 
+Pr(t = t^*_{ij}) = \left(1- e^{-\lambda_{jt}}\right) exp\left(-\sum_{i = 1}^{i < t} \lambda_{ji}\right)
+$$
+
+
+The probability that an individual has a latent period of $z_i - t_i^*$ is described by a geometric distribution with rate parameter $\epsilon$:
+
+$$
+Pr(x  = z_i-t^*_{ij}) = \epsilon (1-\epsilon)^{(z_i-t^*_{ij}-1)}
+$$
+
+For case $i$, the marginal probability - summing over all possible latent periods - that $t = z_i$ is:
+
+$$
+Pr(z_i = t) = \sum_{j = 1}^{z_i - 1} \frac{Pr(j = t^*_{ij}) Pr(x = z_i-j)}{\sum_{k = 1}^{z_i-1}{Pr(x = z_i - k)}}
+$$
+
+Then, for all camps, $j$, the probability of observing $y_{j2}$ cases on day 2, ${y_j3}$ on day 3, etc, is:
+
+$$
+Pr(y_{jt}) = \prod_{i = 1}^{C} \prod_{t = 1}^{T} y_{it} Pr(z_i = i)
+$$
+
+\clearpage
+
 
 # References
