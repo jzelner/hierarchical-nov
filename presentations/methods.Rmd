@@ -4,6 +4,7 @@ author: Jon Zelner
 date: \today
 header-includes:
   - \usepackage{graphicx}
+  - \usepackage{dsfont}
 --- 
 
 # Introduction
@@ -18,31 +19,43 @@ We analyze data previously published by Heijne et al. [@Heijne2009] from a large
 
 # Methods
 
-In this section, we outline a stochastic, discrete-time model of NoV transmission within and between sub-camps of the outbreak. This model is similar to a susceptible-exposed-infectious-recovered (SEIR) model, with key modifications to accomodate between-individual variability in infectiousness.
+In this section, we outline a stochastic, discrete-time model of NoV transmission within and between sub-camps involved in the outbreak. This model is similar to a susceptible-exposed-infectious-recovered (SEIR) model, with key modifications to accomodate between-individual variability in infectiousness.
 
-We denote the number of *incident* cases observed on day $t$ in camp $j$ to be $y_{jt}$. We denote the unobserved number of *infections* on day $t$ in camp $j$ as $y_{jt}^*$. These values are different because of the latent period between infection and onset of symptoms. Individuals are assumed to be infectious at the beginning of their day of onset. We denote the day of onset of disease for individual $i$ as $z_i$. 
 
-## Modeling the latent period
+Lloyd-Smith et al. [@Lloyd-Smith:2005aa] describe an approach to modeling individual-level heterogeneity in infectiousness, in the context of *emerging* infections, to which the population is assumed to be completely susceptible and where the value of the population-level effective reproduction number is assumed to be below 1. This framework relies on the implicit assumption that large outbreaks are the result of a series of relatively improbable transmission events, rather than susceptible exhaustion. This assumption may not apply in the context of a large norovirus outbreak, such as the one described in [@Heijne2009] for two key reasons: 
 
-We utilize the estimates of the mean and variance of NoV incubation period duration published by Lee et al. [@Lee2013] in their systematic review of incubation periods for viral gastroenteritis. Lee et al. assume that NoV incubation periods follow a log-Normal distribution, with a median incubation time of 1.2 days (95% CI = 1.2, 1.3 days) with a dispersion factor (corresponding to the standard deviation of the underlying normal distribution) of 1.56 (95% CI = 1.49, 1.62). In practice, this means that 95% of cases will become symptomatic within 2.5 days of infection (95% CI 2.4-2.6 days). We use a discrete approximation to this value, denoted as $\Omega(x, \mu, \sigma^2)$, where $G(x | \mu, \sigma^2)$ is the cumulative distribution function (CDF) of the log-Normal distribution, for $x \ge 1$, where $x$ is the difference in days between infection and onset:
+1) The average value of $R$ may be larger than 1, indicating that susceptible depletion is a potential explanation for the end of the outbreak rather than reversion to the mean after a series of improbably infectious cases, and,
 
-$$
-\Omega(x, \mu, \sigma^2) = G(x | \mu, \sigma^2) - G(x-1 | \mu, \sigma^2)
-$$
+2) Outbreaks in institutional contexts, such as the scout camp in [@Heijne2009] or on a cruise ship [@Wikswo2011], often reflect transmission contexts subdivided into interacting sub-populations, such as camps or decks of a ship. 
 
-## Heterogeneous infectiousness 
+In the following section, we describe an approach to modeling individual-level heterogeneity in *within-camp* infectiousness as well as the interaction between units. In our model, we denote the number of *incident* cases observed on day $t$ in camp $j$ to be $y_{jt}$. We denote the unobserved number of *infections* on day $t$ in camp $j$ as $y_{jt}^*$. These values are different because of the latent period between infection and onset of symptoms. Individuals are assumed to be infectious at the beginning of their day of onset. We denote the day of onset of disease for individual $i$ as $z_i$. 
 
-Each case is assumed to have an individual within-camp reproduction number $\r_i$ drawn from a gamma distribution with shape parameter $r_{k}$ and a scale parameter $r_{\theta}$. So, $r_i \sim Gamma(r_{k}, r_{\theta})$, and mean value $\bar{R} = r_{k} * r_{\theta}$.  However, because within each camp multiple cases may become infectious on a given day, the values of $\r_i$ for each case are not individually identifiable. However, we can take advantage of the fact that the sum of $n$ Gamma-distributed variables is Gamma distributed with shape parameter $\r_{k}*n$ to sample values $r_{jt}$ indicating the daily total infectiousness across all individuals who became infectious in camp $j$ on day $t$, which we can then use to estimate the daily average reproduction number, $\bar{r}_{jt}$. So, for a given camp, $j$:
+
+## Individual-level varation in infectiousness 
+
+### Between-camp transmission
+
+We assume that the average number of secondary cases generated by each case in camps other than the one they reside in is constant. We denote this *between-camp* effective reproduction number as $R^{B}$. We make this assumption for two reasons: 
+
+1) The camps are the residential contexts in this particular outbreak, and likely represent a primary locus of transmission with many opportunities for transmission in common areas, etc. 
+
+2) As the number of incident cases increases, the impact of variation is likely to decrease, as the population-level impact of a particularly infectious individual becomes more likely to be offset by, a minimally infectious case. Since the force of infection between camps is a function of the sum of all incident cases, we 
+
+## Within-camp transmission
+
+Each case is assumed to have an individual within-camp reproduction number $r_i$ follwing a gamma distribution with shape parameter $R_{k}$ and a scale parameter $R^{W}_{\theta}$. So, $r_i \sim Gamma(R^{W}_{k}, R^{W}_{\theta})$, and population mean value $R^{W} = R^{W}_{k} * R^{W}_{\theta}$.  However, because within each camp multiple cases may become infectious on a given day, the values of $R^{W}_{I}$ for each case are not individually identifiable. However, we can take advantage of the fact that the sum of $n$ Gamma-distributed variables is Gamma distributed with shape parameter $nR^{W}_{k}$ to sample values $r^{W}_{jt}$ indicating the daily total infectiousness across all individuals who became infectious in camp $j$ on day $t$, which we can then use to estimate the daily *average* effective within-camp reproduction number, $\bar{r}^{W}_{jt}$. So, for a given camp, $j$:
 
 \begin{gather*}
-r_{jt} = \sum_{i=1}^{y_{jt}} r_{ij} \mathcal{I}(t_{ij} = t) \\ 
-r_{jt} \sim Gamma(r_{k}y_{jt}, r_{\theta}) \\
-\bar{r}_{jt} = r_{jt}/y_{jt}
+r^{W}_{jt} = \sum_{i=1}^{y_{jt}} r^{W}_{ij} \mathds{1}(t_{ij} = t) \\ 
+r_{jt} \sim Gamma(y_{jt}R^{W}_{k}, R^{W}_{\theta}) \\
+\bar{r}^{W}_{jt} = r^{W}_{jt}/y_{jt}
 \end{gather*}
 
-### Time-varying infectiousness
+Where $\mathds{1}(t_{ij} = t)$ is an indicator function evaluating to 1 if the time of onset in case $i$ in camp $j$ occurred on the day of observation, $t$, and zero otherwise.
 
-We allow individual infectiousness to decay according to a Geometric distribution with parameter $\gamma \in (0,1]$, where:
+## Individual infectiousness as a function of time since symptom onset
+
+We follow the approach to modeling the change in individual infectiousness after symptom onset described in [@Cauchemez:2011] and previously applied to norovirus in [@Zelner2013]. In this framework, a probability distribution is used to model the proportion of an individual's infectiousness occurring on each day following symptom onset (including the day of onset). In the current model, we allow individual infectiousness to decay according to a Geometric distribution with parameter $\gamma \in (0,1]$, where:
 
 $$
 g(x | \gamma) = \gamma (1-\gamma)^x 
@@ -52,10 +65,20 @@ When $t \ge z_i$, $g(t-z_i)$ is the proportion of the infectiousness of individu
 
 ## Force of infection
 
-We denote the parameter $\zeta$ to be the ratio of an individual's per-capita infectiousness for within-camp contacts ($i = j$) vs. outside-camp contacts ($i \ne j$).  We denote the force of infection in camp $j$ at time $t$ as $\lambda_{j,t}$ and can write this as follows:
+We denote the parameter $R^{B}$ to be the expected number of cases each infectious individual will create in *all other* camps except his own. Combining this with the values of within-camp infectiousness, $r^{W}_{jt}$, we can write the force of infection within each camp at each time, $t$, as follows:  
 
 $$
-\lambda_{jt} =  \sum_{k \le t}g(t-k) \left( \frac{\bar{r}_{jk} y_{jk}}{n_{j}}+ \zeta \sum_{i \ne j} \frac{y_{ik}}{(N-n_{i})} \right)
+\lambda_{jt} =  \sum_{k \le t}g(t-k) \left( \frac{{r}_{jk}}{n_{j}}+ \sum_{i \ne j} \frac{y_{ik}R^{B}}{(N-n_{i})} \right)
+$$
+
+The risk of infection posed by each case to individuals in the other camps is a function of the size of the population outside his or her camp, i.e. $N-n_j$ for an individual residing in camp $j$. 
+
+## Modeling the latent period
+
+We utilize the estimates of the mean and variance of NoV incubation period duration published by Lee et al. [@Lee2013] in their systematic review of incubation periods for viral gastroenteritis. Lee et al. assume that NoV incubation periods follow a log-Normal distribution, with a median incubation time of 1.2 days (95% CI = 1.2, 1.3 days) with a dispersion factor (corresponding to the standard deviation of the underlying normal distribution) of 1.56 (95% CI = 1.49, 1.62). In practice, this means that 95% of cases will become symptomatic within 2.5 days of infection (95% CI 2.4-2.6 days). We use a discrete approximation to this value, denoted as $\Omega(x, \mu, \sigma^2)$, where $G(x | \mu, \sigma^2)$ is the cumulative distribution function (CDF) of the log-Normal distribution, for $x \ge 1$, where $x$ is the difference in days between infection and onset:
+
+$$
+\Omega(x, \mu, \sigma^2) = G(x | \mu, \sigma^2) - G(x-1 | \mu, \sigma^2)
 $$
 
 
@@ -66,6 +89,11 @@ require(readr)
 require(dplyr)
 require(rstan)
 require(glue)
+
+par_format <- function(x) {
+ xq <- quantile(x, probs = c(0.025, 0.5, 0.975))
+  xf <- sprintf("%0.2f (%0.2f, %0.2f)", xq[2], xq[1], xq[3]) 
+}
 ## Load pars
 
 z <- read_csv("../output/scalar_pars.csv")
@@ -88,22 +116,24 @@ between_ci <- quantile(between_avg, probs = c(0.025, 0.975))
 infection_source <- readRDS("../output/infection_source.Rds")
 
 inf_q <- infection_source$within_camp$p_within %>% quantile(probs = c(0.025, 0.5, 0.975))
+tm <- par_format(exp(zz$log_beta_mu) + zz$zeta)
+gm <- par_format(zz$gamma)
 ```
 
-## Population and within-camp effective reproduction numbers
+## Within- and between-camp effective reproduction numbers
 
-The average number of *between-camp* transmission events per case is `r sprintf("%0.2f", median(between_avg))`. (95% CI = `r sprintf("%0.2f, %0.2f", between_ci[1], between_ci[2])`). By contrast, the average *within-camp* probability of transmission per 1000 contacts is `r sprintf("%0.2f", median(camp_avg))`. (95% CI = `r sprintf("%0.2f, %0.2f", camp_ci[1], camp_ci[2])`)
+The average number of *between-camp* transmission events per case $R^W =$ `r sprintf("%0.2f", median(between_avg))`. (95% CI = `r sprintf("%0.2f, %0.2f", between_ci[1], between_ci[2])`). By contrast, the average *within-camp* reproduction number $R^{W}$ is `r sprintf("%0.2f", median(camp_avg))`. (95% CI = `r sprintf("%0.2f, %0.2f", camp_ci[1], camp_ci[2])`). Summing these values gives us the average effective reproduction number $R = R^B + R^W$ = `r tm`. However, the value of $r_i$ across individuals is highly dispersed $\alpha$ = `r sprintf("%0.2f", beta_shape[,"median"])` (95% CI = `r sprintf("%0.2f, %0.2f", beta_shape[,"low_ci"], beta_shape[,"high_ci"])`), indicating wide heterogeneity in infectiousness across individuals. Figure \ref{fig:rposterior} illustrates this variation. 
 
-However, the value of $r_i$ across individuals is highly dispersed $\alpha$ = `r sprintf("%0.2f", beta_shape[,"median"])` (95% CI = `r sprintf("%0.2f, %0.2f", beta_shape[,"low_ci"], beta_shape[,"high_ci"])`), indicating wide heterogeneity in infectiousness across individuals.
+Figure \ref{fig:dailyr} shows the evolution of $r^{W}_{jt}$ across all camps over the course of the outbreak. Figure \ref{fig:campr} shows this quantity for each camp individually. Notably, transmission within each camp is characterized by sporadic super-spreading events, rather than a time-constant rate of infectiousness.
 
-Figure \ref{fig:dailyr} shows the evolution of $R_{eff}$ across all camps over the course of the outbreak. Figure \ref{fig:campr} shows this quantity for each camp individually. Notably, transmission within each camp is characterized by sporadic super-spreading events, rather than a time-constant rate of infectiousness.
+Almost all infectiousness is concentrated on the day of onset, as indicated by the parameter estimae $\gamma=$ `r gm`. These results echo the finding from [@Zelner2013], which found a strong concentration of individual infectiousness on the day of illness onset.
 
 ## Between vs. within-camp transmission
 
-The differences in the magnitude of the parameters representing within-camp infectiousness, $\beta_{jt}$ and between-camp transmission, $\zeta$ are difficult to interpret directly. This is because at any given time, there may be many more prevalent cases outside of an individual's camp than within it. As a result, even if the per-case rate of transmission is many times lower, the force of infection from outside may be significant enough that a large proportion of cases may still be acocunted for by between-camp transmission. To understand the relative contributions of within vs. between camp transmission, we use the method described by Cauchemez & Ferguson [@Cauchemez:2011aa].  To do this, we calculate the force of infection between-camp, denoted $\eta_{B}$ and, within-camp, denoted $\eta_{W}$, experienced by each infected individual. So:
+The differences in the magnitude of the parameters representing within-camp infectiousness, $R^{W}$ and between-camp transmission, $R^{B}$ are difficult to interpret directly. This is because at any given time, there may be many more prevalent cases outside of an individual's camp than within it. As a result, even if the per-case rate of transmission is many times lower, the force of infection from outside may be significant enough that a large proportion of cases may still be acocunted for by between-camp transmission. To understand the relative contributions of within vs. between camp transmission, we use the method described by Cauchemez & Ferguson [@Cauchemez:2011aa].  To do this, we calculate the force of infection between-camp, denoted $\eta_{B}$ and, within-camp, denoted $\eta_{W}$, experienced by each individual infected on each day. So:
 
 $$
-\eta^{W}_j = \sum_{t < T} y^{*}_{jt}y_{jt} \bar{\beta}_{jt}
+\eta^{W}_j = \sum_{t < T} y^{*}_{jt}r_{jt}
 $$
 
 And:
@@ -119,6 +149,25 @@ When we do this, we find that across all camps, approximately `r glue("{pct}%", 
 \clearpage
 
 # Figures & Tables
+```{r echo=FALSE}
+par_format <- function(x) {
+ xq <- quantile(x, probs = c(0.025, 0.5, 0.975))
+  xf <- sprintf("%0.2f (%0.2f, %0.2f)", xq[2], xq[1], xq[3]) 
+}
+gm <- par_format(zz$gamma)
+zm <- par_format(zz$zeta)
+rm <- par_format(exp(zz$log_beta_mu))
+tm <- par_format(exp(zz$log_beta_mu) + zz$zeta)
+```
+Parameter     Definition                                        Estimate (95% CI)
+---------     ----------                                        ---------------
+$\gamma$      Proportion of infectiousness each day             `r gm`
+$R_{B}$       Between-camp reproduction number                  `r zm`
+$R_{W}$       Average within-camp reproduction number           `r rm`
+$R$           Average total reproduction number ($R_W + R_B$)   `r tm`
+
+
+Table: Parameters and their values
 
 \begin{figure}[h]
 \centering
@@ -132,13 +181,6 @@ When we do this, we find that across all camps, approximately `r glue("{pct}%", 
 \includegraphics[width=0.6\textwidth]{output/figures/cases_by_camp.pdf}
 \caption{Number of incident cases in each camp by day of outbreak. Dotted vertical line indicates the start of outbreak interventions.}
 \label{fig:campcases}
-\end{figure}
-
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.6\textwidth]{images/heijne_eid_daily_r.png}
-\caption{Estimated daily $R_{eff}$ from Heijne et al. 2009}
-\label{fig:heijne}
 \end{figure}
 
 
@@ -158,10 +200,19 @@ When we do this, we find that across all camps, approximately `r glue("{pct}%", 
 
 \begin{figure}
 \centering
+\includegraphics[width=0.7\textwidth]{output/figures/marginal_inf_dist.pdf}
+\caption{Marginal posterior distribution of average daily within-camp infectiousness, $r^{W}_{jt}$.}
+\label{fig:rposterior}
+\end{figure}
+
+
+\begin{figure}
+\centering
 \includegraphics[width=0.7\textwidth]{output/figures/p_by_camp.pdf}
 \caption{Proportion of infections acquired within-camp, as a function of the total proportion of incident cases within that camp. Points indicated posterior medians; vertical bars indicated 95\% posterior credible intervals. Each point is labelled by the camp in Figure \ref{fig:campcases} it corresponds to.}
 \label{fig:camp_p}
 \end{figure}
+
 
 
 \clearpage

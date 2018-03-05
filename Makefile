@@ -36,6 +36,7 @@ output/figures/p_by_camp.pdf : src/p_by_camp.R output/infection_source.Rds
 	@mkdir -p $(@D)
 	./$<
 	
+FIGURES := output/figures/daily_avg_r.pdf output/figures/p_by_camp.pdf output/figures/daily_camp_r.pdf
 ###############################################################################
 ## Below here is for generating output documents
 
@@ -54,7 +55,7 @@ endif
 CSL := presentations/config/american-journal-of-epidemiology.csl
 ############################################################
 ## Generic rule for translating Rmd to markdown
-output/%.md : presentations/%.Rmd output/scalar_pars.csv output/infection_source.Rds
+output/%.md : presentations/%.Rmd output/scalar_pars.csv output/infection_source.Rds 
 	@echo ----Translating abstract text from RMD to Markdown----
 	@mkdir -p $(@D)
 	Rscript \
@@ -76,7 +77,7 @@ output/%.tex : output/%.md
 
 
 ## Generic rule for translating tex to pdf
-output/%.pdf : output/%.tex $(FIGURES)
+output/methods.pdf : output/methods.tex $(FIGURES)
 	@echo ----Generating $(@F)----
 	latexmk -$(TEXENGINE) $< > texout.txt
 	mv $(@F) $(@D)/.

@@ -45,7 +45,7 @@ parameters {
   real<lower=0> beta_shape; //Shape of distribution of betas
   real<lower=0> zeta; //Per-capita exposure to individuals outside camp
   real<lower=0, upper = 1> gamma; //Shape of infectious period
-  real zeta_pars[2];
+  vector[C-1] camp_log_rr;
 
 }
 
@@ -96,8 +96,10 @@ model {
 
   //Model pars
   for (i in 1:N) {
+#      real c_rr = J[i] == 1 ? 0 : camp_log_rr[J[i]-1];
     beta[i] ~ gamma(beta_shape*Y[i], (beta_shape*Y[i])/exp(log_beta_mu));
   }
+  camp_log_rr ~ normal(0, 2);
   log_beta_mu ~ normal(0, 2);
   beta_shape ~ normal(4,1);
   ##zeta ~ lognormal(zeta_pars[1], exp(zeta_pars[2]));
