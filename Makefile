@@ -35,6 +35,11 @@ output/infection_source.Rds : src/inf_source.R output/nov_model.Rds output/nov_m
 output/figures/p_by_camp.pdf : src/p_by_camp.R output/infection_source.Rds
 	@mkdir -p $(@D)
 	./$<
+
+output/figures/marginal_inf_dist.pdf : src/marginal_r.R output/nov_model.Rds
+	@mkdir -p $(@D)
+	./$<
+	
 	
 FIGURES := output/figures/daily_avg_r.pdf output/figures/p_by_camp.pdf output/figures/daily_camp_r.pdf
 ###############################################################################
