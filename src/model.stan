@@ -18,7 +18,8 @@ transformed data {
   for (i in 1:N) {
     Ymat[J[i],t[i]] = Y[i];
   }
-
+  //bc_pop is the contact rate with individuals 
+  //outside of the case's camp
   for (i in 1:C) {
     for (j in i:C) {
      bc_pop[i,j] = i == j ? 0 : 1/(sum(P)-P[j]);
@@ -45,7 +46,6 @@ parameters {
   real<lower=0> beta_shape; //Shape of distribution of betas
   real<lower=0> zeta; //Per-capita exposure to individuals outside camp
   real<lower=0, upper = 1> gamma; //Shape of infectious period
-  vector[C-1] camp_log_rr;
 
 }
 
@@ -61,10 +61,10 @@ transformed parameters {
    for (i in 1:N) {
        beta_mat[J[i],t[i]] = beta[i]/P[J[i]];
    }
-  //Pre-calculate proportion of infectiousness on each day since onset
-  inf_day[1] = gamma; //exponential_cdf(1, gamma);
+  //Pre-calculate geometrically-distributed proportion of infectiousness on each day since onset
+  inf_day[1] = gamma; 
   for (i in 2:T) {
-    inf_day[i] = pow((1-gamma),i-1)*gamma;//exponential_cdf(i, gamma) - exponential_cdf(i-1, gamma);
+    inf_day[i] = pow((1-gamma),i-1)*gamma;
   }
 
   //Sum across camps to get force of infection for each day
@@ -94,39 +94,43 @@ transformed parameters {
 
 model {
 
-  //Model pars
+  //Prior for total infectiousness for each day/camp combination
   for (i in 1:N) {
-#      real c_rr = J[i] == 1 ? 0 : camp_log_rr[J[i]-1];
     beta[i] ~ gamma(beta_shape*Y[i], (beta_shape*Y[i])/exp(log_beta_mu));
   }
-  camp_log_rr ~ normal(0, 2);
-  log_beta_mu ~ normal(0, 2);
+  
+  
+  log_beta_mu ~ normal(-1, 2);
   beta_shape ~ normal(4,1);
-  ##zeta ~ lognormal(zeta_pars[1], exp(zeta_pars[2]));
+  
   //Iterate over camps
   for (c in 1:C) {
     //Log-likelihood for survival
     target += -S[c]*c_lambda[c,T];
   }
 
-
-  for (i in 1:N) {
+  for (i in 1:N) { //Looping over all days where there are > 0 cases
     if (t[i] > 1) {
-      int max_inf_t = t[i]-1; //> 11 ? 11 : t[i]-1;
+      int max_inf_t = t[i]-1; 
       vector[max_inf_t] log_ll;
       vector[max_inf_t] elogs;
       real total_e;
+      
+      //Pre-calculating the LL contributions from 
+      //exposure and latency for each possible 
+      //day of infection
       for (tt in 1:max_inf_t) {//tt = possible infection time
-      //Need to change this to matrix slice
-        real c_ex = tt > 1 ? c_lambda[J[i], tt-1] : 0;
+        //0  cumulative exposure (c_ex) for cases infected on day 0
+        real c_ex = tt > 1 ? c_lambda[J[i], tt-1] : 0;  
         real d_ex = 1.0 - exp(-lambda[J[i],tt]);
         elogs[tt] = e_log_ll[t[i]-tt];
         log_ll[tt] = log(d_ex) - c_ex;
       }
 
+      //Adding in log-likelihood associated with latent period
       total_e = log_sum_exp(elogs);
       for (tt in 1:max_inf_t) {
-        log_ll[tt] = log_ll[tt] + elogs[tt] - total_e;
+        log_ll[tt] = log_ll[tt] + elogs[tt]; //- total_e;
       }
 
       target += Y[i]*log_sum_exp(log_ll);
@@ -143,7 +147,6 @@ generated quantities {
   matrix[C,T] camp_r;
   matrix[C,T] beta_Y;
   matrix[C,T] lambda_within;
-##  vector[T] p_within_inf;
   vector[C] c_weights = P / total_pop;
   {
 
