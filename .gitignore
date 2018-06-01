@@ -6,3 +6,4 @@ texout.txt
 *.fls
 *.log
 *.out
+.drake
