@@ -14,7 +14,7 @@ output/nov_model_input.Rds : src/prep_model_input.R data/jamboree_data.csv data/
 	@mkdir -p $(@D)
 	./$<
 
-output/nov_model.Rds : src/runmodel.R src/model.stan output/nov_model_input.Rds
+output/nov_model.Rds : src/runmodel.R src/contact_model.stan output/nov_model_input.Rds
 	@mkdir -p $(@D)
 	./$<
 

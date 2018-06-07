@@ -1,7 +1,10 @@
 data {
   int C; //Number of camps
   int T; //Number of days observed
+  int end_T; //Day contact ends
+  int before_end; //Number of cases before end
   int N; //Total number of observations
+  int<lower=1,upper=N> before_end_id[before_end]; //Indices of individuals infected before end
   vector[C] P; //Population of each camp
   int<lower=1, upper=C> J[N]; //Camp index for each observation
   int<lower=1, upper=T> t[N]; //Day of each observation
@@ -35,42 +38,65 @@ transformed data {
   //Pre-load latency log-lls
   for (i in 1:T) {
     e_log_ll[i] = log(pow((1-epsilon),i-1)*epsilon);
-#    e_log_ll[i] = log(exponential_cdf(i | 0.45)-exponential_cdf(i-1 | 0.45));
   }
 }
 
 parameters {
-  real log_beta_mu; //Avg log beta
-  vector<lower=0>[N] beta; //Realized avg beta by day
+  vector<lower=0>[before_end] beta_raw; //Realized avg beta by day
   real<lower=0> beta_shape; //Shape of distribution of betas
-  real<lower=0> zeta; //Per-capita exposure to individuals outside camp
-  real<lower=0, upper = 1> gamma; //Shape of infectious period
+  real zeta_raw;
+  real gamma_raw;
+ real log_beta_mu; 
+ vector[end_T] day_log_mu;
+vector[2] day_beta;
+ real<lower=0> day_sigma;
 
 }
 
 transformed parameters {
+  vector<lower=0>[N] beta = rep_vector(0, N);
+    real<lower=0, upper = 1> zeta = inv_logit(zeta_raw); //Per-capita exposure to individuals outside camp
+  real<lower=0, upper = 1> gamma = inv_logit(gamma_raw); //Shape of infectious period
+ 
   matrix[C,T] lambda = rep_matrix(0, C, T); //Daily per-capita force of infection for each camp
   matrix[C,T] lambda_w = rep_matrix(0, C, T);
   matrix[C,T] lambda_b = rep_matrix(0, C, T);
   matrix[C,T] c_lambda = rep_matrix(0, C, T);
   matrix[C,T] beta_mat = rep_matrix(0, C, T);
   vector<lower=0, upper=1>[T] inf_day; //Distribution of infectiousness by day
-  matrix[C,T] zeta_t = zeta * (bc_pop * Ymat);
-
+  matrix[C,T] zeta_t =  rep_matrix(0, C, T);
+  
+  // for (i in 1:end_T) {
+  //   beta_scale[i] = exp(camp_log_mu[i])/beta_shape;
+  // }
+  // 
+  for (i in 1:before_end) {
+      int bid = before_end_id[i];
+      beta[bid] = beta_raw[i]*exp(day_log_mu[t[bid]])/beta_shape;
+  }
+ 
    for (i in 1:N) {
-       beta_mat[J[i],t[i]] = beta[i]/P[J[i]];
+       beta_mat[J[i],t[i]] = (1-zeta)*beta[i]/P[J[i]];
+       for (j in 1:C) {
+          zeta_t[j,t[i]] = zeta_t[j,t[i]] + (zeta*beta[i]*bc_pop[J[i],j]);
+       }
    }
+ 
+
+ 
+  
   //Pre-calculate geometrically-distributed proportion of infectiousness on each day since onset
-  inf_day[1] = 1;##gamma; 
+  inf_day[1] = gamma; 
   for (i in 2:T) {
-    inf_day[i] = 0; ##pow((1-gamma),i-1)*gamma;
+    inf_day[i] = pow((1-gamma),i-1)*gamma;
   }
 
   //Sum across camps to get force of infection for each day
   for (c in 1:C) { //Repeat for each camp
       for (tb in 1:T) {
+        
+        //Get contributions from outside and within camp
         real db = beta_mat[c,tb];
-        //Get contributions from outside
         real dz = zeta_t[c,tb];
         
         for (te in tb:T) {
@@ -93,14 +119,21 @@ transformed parameters {
 model {
 
   //Prior for total infectiousness for each day/camp combination
-  for (i in 1:N) {
-    beta[i] ~ gamma(beta_shape*Y[i], (beta_shape*Y[i])/exp(log_beta_mu));
+  for (i in 1:before_end) {
+      beta_raw[i] ~ gamma(beta_shape*Y[before_end_id[i]], 1);
+  }
+     
+  for (i in 1:end_T) {
+    real day_eff = i < 4 ? 0 : day_beta[2];
+    day_log_mu[i] ~ normal(log_beta_mu + day_eff, day_sigma);
+    
   }
   
-  
-  log_beta_mu ~ normal(-1, 2);
-  beta_shape ~ normal(4,1);
-  
+  beta_shape ~ normal(0,1);
+  log_beta_mu ~ normal(0, 1);
+  gamma_raw ~ normal(0, 1);
+  zeta_raw ~ normal(0, 1);
+  day_sigma ~ normal(0,1);
   //Iterate over camps
   for (c in 1:C) {
     //Log-likelihood for survival
@@ -109,7 +142,9 @@ model {
 
   for (i in 1:N) { //Looping over all days where there are > 0 cases
     if (t[i] > 1) {
-      int max_inf_t = t[i]-1; 
+      //Ensure that all infection times are for the period
+      //when the jamboree is still going
+      int max_inf_t = t[i] <= end_T ? t[i]-1 : end_T-1; 
       vector[max_inf_t] log_ll;
       vector[max_inf_t] elogs;
       real total_e;
@@ -122,16 +157,18 @@ model {
         real c_ex = tt > 1 ? c_lambda[J[i], tt-1] : 0;  
         real d_ex = 1.0 - exp(-lambda[J[i],tt]);
         elogs[tt] = e_log_ll[t[i]-tt];
-        log_ll[tt] = log(d_ex) - c_ex;
+        log_ll[tt] = log(d_ex) - c_ex + e_log_ll[t[i]-tt];
       }
 
+      
       //Adding in log-likelihood associated with latent period
       total_e = log_sum_exp(elogs);
       for (tt in 1:max_inf_t) {
-        log_ll[tt] = log_ll[tt] + elogs[tt]; //- total_e;
+        log_ll[tt] = log_ll[tt] - total_e;
       }
-
+      
       target += Y[i]*log_sum_exp(log_ll);
+
     }
   }
 
@@ -142,26 +179,24 @@ model {
 generated quantities {
 
   vector[T] daily_avg_r;
-  matrix[C,T] camp_r;
-  matrix[C,T] beta_Y;
+  matrix[C,T] camp_r = rep_matrix(0, C, T);
   matrix[C,T] lambda_within;
   vector[C] c_weights = P / total_pop;
   {
+  for (i in 1:N) {
+    camp_r[J[i], t[i]] = beta[i];
+  }
 
-    for (c in 1:C) {
-      real real_t = 1;
-      for (tt in 1:T) {
-        real active_y = Ymat[c,tt] > 0 ? 1 : 0;
-        camp_r[c,tt] = Ymat[c,tt]*(P[c]*beta_mat[c, tt] + (total_pop - P[c])*(zeta/(sum(P)-P[c])));
-        lambda_within[c,tt] = lambda_w[c,tt]/(lambda_b[c,tt]+lambda_w[c,tt]);
-      }
+  for (c in 1:C) {
+    for (tt in 1:T) {
+      lambda_within[c,tt] = lambda_w[c,tt]/(lambda_b[c,tt]+lambda_w[c,tt]);
     }
-    beta_Y = camp_r;
-      for (tt in 1:T) {
-      daily_avg_r[tt] = sum(col(beta_Y,tt))/sum(col(Ymat,tt));
-    }
+  } 
 
 
+  for (tt in 1:T) {
+      daily_avg_r[tt] = sum(col(camp_r,tt))/sum(col(Ymat,tt));
+  }
 
   }
 }

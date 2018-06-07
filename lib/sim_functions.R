@@ -1,8 +1,8 @@
 require(dplyr)
 
-parameters <- list(beta = 0.89,
-                   beta_shape = 0.03,
-                   zeta = 0.2,
+parameters <- list(beta = 0.6,
+                   beta_shape = 10.04,
+                   zeta = 0.35,
                    gamma_shape = 3.36,
                    gamma_scale = 1.0, 
                    T = 16,
@@ -68,7 +68,7 @@ gentime_sim <- function(pars) {
         n <- new_inf[j]
         if (n > 0) {
           ## Sample onset days
-          camp_incidence <- i + ceiling(rlnorm(n))
+          camp_incidence <- i + rgeom(n, prob = 0.6) + 1
           if( sum(camp_incidence <= T) > 0) {
             camp_incidence <- table(camp_incidence[camp_incidence <= T])
             onset_days <- as.numeric(names(camp_incidence))

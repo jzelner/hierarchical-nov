@@ -23,9 +23,13 @@ od <- od %>% inner_join(camp_id) %>%
 
 pd <- pd %>% inner_join(camp_id) %>%
   arrange(id)
-
+end_T <- 11
+ids <- 1:nrow(od)
 data_in <- list(C = nrow(camp_id),
                 T = length(unique(od$day)),
+                end_T = end_T,
+                before_end = sum(od$t <= end_T),
+                before_end_id = ids[od$t <= end_T],
                 N = nrow(od),
                 P = pd$N,
                 J = od$id,
