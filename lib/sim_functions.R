@@ -10,6 +10,7 @@ parameters <- list(beta = 0.9,
                    I0 = c(1,1,0,0,0,0,0),
                    P = rep(500, 7))
 
+
 outbreak_sim <- function(pars) {
   with(pars, {
      ## Get number of locations

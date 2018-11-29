@@ -1,0 +1,146 @@
+---
+title: "Accounting for regression toward the mean in the measurement of intervention efficacy"
+author: "Jon Zelner"
+date: \today
+output: 
+  rmarkdown::pdf_document:
+    fig_caption: yes
+    includes:
+      in_header: "/home/jzelner/repos/projects/hierarchical-nov/presentations/preamble-latex.tex"
+bibliography: "/home/jzelner/repos/bibtex-library/papers.bib"
+csl: "/home/jzelner/repos/projects/hierarchical-nov/presentations/config/american-journal-of-epidemiology.csl"
+header-includes:
+  - \usepackage{float}
+--- 
+
+# Introduction
+
+A common approach to measuring the impact of interventions in the course of infectious disease outbreaks is to measure the daily evolution of a measure of average infectiousness, such as the basic reproduction number, $R_{0}(t)$, or effective reproduction number, $R(t)$ before and after the beginning of interventions. Change in these values is then often attributed to the protective impact of interventions. For example, Heijne et al. [@Heijne2009] estimated the value of $R(t)$ over successive days of a large *Norovirus* gastroenteritis outbreak in which an intensive handwashing intervention was implemented after the number of cases exceeded an intervention threshhold, $c$. They found that $R(t)$ dropped from above to below the critical threshhold of $R(t) = 1$ in the days following intervention, and concluded that this decline may have been attributable to the impact of intervention. This approach is analogous to the *case-control* study design common in epidemiology: individuals who become ill prior to the onset of interventions are deemed to be *controls* while those individuals who become ill following intervention are deemed to be *cases*, and intervention effects are estimated using differences between these groups. A key challenge to making sense of analyses that use this approach, however, is in accounting for the dependence between the magnitude of transmission events associated with early cases and the observation of subsequent cases. 
+
+This approach is not limited to analyses of Norovirus interventions, and has been applied to a range of emerging pathogens, including SARS [@Wallinga2004], Hand, Foot, and Mouth Disease [@Haydon2003], and pandemic influenza [@Hens2012], as well as historical analyses of plague outbreak data [@Dean2018]. It is important to note that the results of many of these analyses are presented with the caveat that the effects of intervention may be difficult to disentangle from inherent variation in individual infectiousness, contact, etc. However, without formal guidance, it is difficult to interpret the results of such analyses or develop statistical techniques that might mitigate thhe underlying issues. In this paper we develop a framework to systematically examine the implications of differing levels of between-individual heterogeneity on the ability to detect and measure the magnitude of intervention effects. We argue that *observed* outbreaks of pathogens with expected values of the basic reproduction number, $\bar{R}_{0}$, below or near unity, are disproportionately likely to exhibit larger-than-expected values of $R_0(t)$ and $R(t)$ in their early phases, followed by regression toward the mean occurring around the time interventions are applied. 
+
+# Methods 
+
+## Theoretical Framework
+
+We define the expected value of $R_{0}(t)$ over all days prior to the onset of interventions as $R_{0}^{pre}$, and this value for all days after interventions have been applied as $R_{0}^{post}$.  We can define the time when outbreak interventions begin as $\zeta = min(t \colon \sum_{i =1}^{t} y_i \ge c)$. An implicit assumption of the approach described above is that in the absence of interventions, $\Delta R_{0} = R^{pre}_{0} - R_{0}^{post}$ will be greater when interventions are applied then when they are not. A stronger and also often present assumtion is that $R_0(t \ge \zeta) > 1$, i.e. that the outbreak would continue unabated in the absence of intervention. In particular, when $R_{0}^{post} < 1$ and $R_{0}^{post} + \Delta R_0 > 1$, i.e. the value of $R_0$ crossed unity after the intervention began, the end of the outbreak may be attributed to the causal effect of the intervention. Here, we consider an alternative possibility, that in many cases, decreases in $R_{0}$ - including those crossing the critical threshhold of $R_{0} = 1$ - following intervention may be attributed to *regression toward the mean*. Because of the mechanisms by which outbreaks are selected for both intervention and analysis, we argue that large values of $R_{0}(t)$ are disproportionately likely in the early phases of *observed* outbreaks. After the observation/intervention threshhold $c$ is crossed, values of $R_{0}(t)$ on succeeding days are more likely to reflect the population distribution. When the true value of $R_{0} \le 1$, this will necessarily result in a significant reduction in the effective reproduction number and may result in misattribution of a declining outbreak to protective effects of intervention.
+
+Gelman and Carlin [@Gelman2014] propose a *design analysis* framework for understanding the potential for inflated effect size estimates - denoted *Type M* (Magnitude) errors - as a function of study design. This approach has previously been applied to survey data from psychology and the social sciences. In the current analysis, we extend this approach to understanding the potential size of Type M errors in the assessment of infectious disease intervention efficacy.
+
+## Transmission Model
+
+Lloyd-Smith et al. provide a model that is helpful for understanding the implications of selection bias to induce Type M errors in outbreak intervention analyses [@Lloyd-Smith:2005aa]. In this framework, each case has an expected *individual* effective reproduction number represented a random variable, $r_i$ which is assumed to follow a gamma distribution with shape parameter $k$ and scale parameter $\theta$. In this framework, the expected value of the effective reproduction $R_0 = k \theta$. This allows us to hold the expected value of $R_0$ across all individuals constant while manipulating the variance via the shape parameter: As $k \to 0$, the variance of individual infectiousness increases towards infinity, and as $k \to \infty$, the variance of $r_{i} \to 0$, i.e. all cases will have exactly the same infeciousness. 
+
+In their original analysis, Lloyd-Smith et al. estimated values of $k$ for a number of pathogens including SARS ($k = 0.02$), Measles ($k = 0.05$), Monkeypox ($k = 0.1$), and Pneumonic plague ($k = 0.2$). This analysis confirmed that for a number of emerging and epidemic pathogens, there is considerable heterogeneity in individual infectiousness. They also found that for a fixed value of $R$, lower values of $k$ predicted less frequent but *more explosive* outbreaks more likely to be characterized by high-yield super-spreading events (SSEs). 
+
+To allow for situations in which susceptible depletion is a potential explanation for the end of an outbreak, we consider a finite-population stochastic SIR model. Outbreaks start at $t=1$ with a single infectious individual introduced into an otherwise susceptible population of 1000 people. Contact is assumed to be density dependent, i.e. the daily per-capita infectiousness of each case $\beta_{i}= \frac{r_i}{N}$. For simplicity, we assume that individuals are infectious only on the day they develop symptoms. Individuals infected on day $t$ become infectious on day $t+1$. Results regarding RTM effects obtained from this model will likely be conservative as compared to an SEIR model or generation-time model that allows a delay between infection and disease onset.
+
+To account for between-individual variation in infectiousness,we take advantage of the fact that the distribution of a sum of $N$ gamma RVs with shape $k$ and scale $\theta$ is Gamma distributed with shape $kN$. So, we draw the total force of infection on each day, $\lambda(t) = \sum_{i} \mathcal{I}(\tau_i = t) r_i$ from a Gamma distribution with shape parameter $k I(t)$ and scale parameter $R/k$, where $\tau_i$ is the onset time for individual $i$. So, the risk of infection to each susceptible individual on day $t$ is equal $1-exp(-\lambda(t)/N)$. We can also use this value to estimate the value of $R_{0}(t) = \lambda(t)/\sum_{i} \mathcal{I}(\tau_i = t)$. To estimate daily values of the *effective* reproduction number, $R(t)$, we multiply $R_{0}(t)$ by the proportion susceptible, so: $R(t) = R_{0}(t) \frac{S(t)}{N}$.
+
+## Model Fitting
+
+We define the *contact* matrix between individuals who became ill on day $i$ with another individual on day $j$ as a zero-diagonal directed adjacency matrix $\mathbf{A}$ with off-diagonal elements $a_{ij} = j-i+1$ for all $i < j \le q$, where $q$ is the time at which contact ends. For all $j < i$, $a_{ij} = 0$. This way, the elements of $\mathbf{A}$ reflect the exposure on day $j$ to individuals who became ill on day $i$. The rows of transpose of $\mathbf{A}$, $\mathbf{A}^T$ describe the exposure of an individual on day $i$ to all other days $i \ge j$. 
+
+We then define a vector of cumulative exposures , $\mathbf{h} = G(\mathbf{A}^T-1)\mathbf{r}$, where $G()$ is the cumulative distribution function of the infectiousness kernel $g()$. We also define the vector of daily infection risks $\mathbf{z} = g(\mathbf{A}^T)\mathbf{r}$. We can then define the probability of infection on each day as $\lambda_i = (1-e^{-h_i}) e^{-z_i}$
+
+Finally, we define a matrix of weights $\mathbf{L}$, where $l_{ij}$ denotes the probability that an individual who became ill on day $i$ was infected on day $j$. This allows a flexible definition of the latent period: For the chain-binomial assumption that individuals becoming ill on day $j$ were infected on the previous day, all $l_{i,i-1} = 1$ for $i > 1$, with all other elements equal to zero.  We can then take the product of the number of infections on each day as the probability of observing the illness onset data $Pr(\mathbf{z} | \mathbf{r}) = \prod_i z_i (l_{i,*} \cdot \lambda_i)$, where $l_{i,*}$ denotes the i-th row of $\mathbf{L}$. 
+ 
+
+## Design Analysis
+
+In this section, we apply the *design analysis* framework discussed by Gelman and Carlin [@Gelman2014] to the analytic strategy in which an outbreak intervention effect size is estimate using the difference in $R_0$ before and after the application of outbreak interventions. 
+
+As described earlier, outbreaks selected for intervention are typically those that have passed some threshhold size, $c$, beyond which they are considered to be of epidemiological concern. If the value of $R_{0}$ in the absence of intervention is $< 1$, i.e. the outbreak would *a priori* be expected to be self-limiting - an observed outbreak of size $> c$ will likely consist of outbreaks in which the sample mean of daily reproduction numbers prior to crossing the intervention threshhold is greater than afterwards, i.e. $E(R_{0}^{post}) < E(R_{0}^{pre})$, for all but small values of the outbreak size threshhold $c$. This opens up the possibility for Type M error in analyses in which the estimator of a protective effect of an intervention is the change in $R_{0}(t)$: By conditionining on observing an outbreak final size $z \ge c$, we increase the likelihood of observing values of $\Delta R_0$ that can be explained by regression toward the mean rather than the true impact of an intervention. 
+
+To measure the probability that $\Delta R_0$ will cross unity in the absence of intervention, we constructed the following design analysis:
+
+Select parameters $\theta = {c, R_0, k}$. 
+
+1. Introduce 1 infectious individual with $r_i \sim Gamma(k, R_{0}/k)$ into a closed population of 1000 individuals and simulate the transmission process over a 14-day period. Repeat this simulation 5000 times to get a distribution of final size, $z$, values.
+
+Then, for each simulated *outbreak*, i.e. where the final size of the outbreak $z > c$:
+
+1. Determine time $\zeta$ when intervention threshold is crossed.
+
+2. Calculate $R_{0}(t)$ and $R(t)$ on each day of the outbreak. 
+
+3. Estimate $\Delta R_0^{RTM} = R_{0}^{post}- R_{0}^{pre}$ and $\Delta R = R_{post} - R_{pre}$.
+
+4. Calculate the proportion of outbreaks in which $R_{0}^{post} < 1$ and $R_{0}^{post} + \Delta R_0 > 1$, which gives an estimate of the fraction of outbreaks in which a post-intervention drop in $R_0$ which may be attributed to intervention is likely the result of RTM. This value is denoted $Pr(R_{0}^{pre} > 1, R_{0}^{post} < 1 |  \theta)$.
+
+5. Repeat step 4 to estimate $Pr(R^{pre} > 1, R^{post} < 1 | \theta)$, taking the ratio $\frac{Pr(R_{0}^{pre} > 1, R_{0}^{post} < 1 |  \theta)}{Pr(R^{pre} > 1, R^{post} < 1 | \theta)}$ as an estimator of the proportion of outbreaks with a post-treshhold drop crossing unity that can be attributed to regression to the mean rather than susceptible depletion. 
+
+# Results
+
+## Theoretical Model
+
+Figures \ref{fig:poutbreak}-\ref{fig:postr} illustrate expected drops in $R_0$ in the absence of any intervention for a range of plausible values of $k$ and $R_0$. Figure values reflect averages from 5000 simulations at each paramter value. We explored all combinations of values of $k$ from 0.05 to 1 and values of $R_0$ from 0.5 to 1. This represents the parameter regime in which RTM is likely to be of greatest concern: where the value of $R_0$ is near the outbreak threshhold, and there is considerable heterogeneity in infectiousness. We begin with a focus on a conservative outbreak threshhold $c = 10$. As $c$ gets larger, these results are likely to be consistent, with a smaller probability of outbreak per simulation and similar effects of heterogeneity. 
+
+Figure \ref{fig:poutbreak} shows the probabilty of observing an oubtreak of size > 10 cases within a 14-day observation period, following the introduction of an index case on day 1. This echoes the finding from [@Lloyd-Smith:2005aa] that for a fixed value of R, smaller values of $k$ will result in less frequent outbreaks as a result of stochastic extinction. 
+
+Figure \ref{fig:pdrop} shows the proportion of such outbreaks in which $\Delta R_0 + R_{0}^{post} > 1$, i.e. when the drop in $R_0$ might be attributed to ending the outbreak, because the expected post-intervention value of R crossed one.
+
+Figure \ref{fig:prer} shows the average pre-intervention value of $R_0$ for outbraks of > 10 cases as a function of decreasing heterogeneity (x-axis) and average infectiousness (point color).
+
+Figure \ref{fig:postr} shows the average post-intervention value of $R_0$ for outbreaks of > 10 cases, again as a function of decreasing heterogeneity and average infectiousness. 
+
+The values in Fig. \ref{fig:prer} and Fig. \ref{fig:postr} explain the very high proportion of outbreaks crossing the critical threshhold of 1 without intervention for values of $k < 0.5$: When between-individual variance in infectiousnes is high, i.e. when $k$ is low, values of $r_i > 1$ are likely to be significantly greater than 1, leading to a rapid crossing of the intervention threshhold. As the variance in $r_i$ decreases, pre and post-intervention R values become closer to each other. 
+
+The post-intervention values in Figure \ref{fig:postr} are at first glance unintiutive: why do $R_0$ values post-intervention appear to be significantly lower than the expected value of $R$ at low values of $k$? This pattern is likely explained in terms of the Gambler's Ruin: Because the sample mean of $r_i$ values at each timestep $t$ must be $\ge 1$ to draw another set of $r_i$ values, when the distribution of $r_i$ is overdispersed and $R_0 \le 1$, most values of $r_i$ will be < 1. Thus, the expected value of sample means over outbreaks will be $< R$. However, the sampled values of $r_i$ across all simulated outbreaks for a given $R_0$ are nearly equal to $R_0$. 
+
+## Outbreak Example
+
+# Discussion
+
+## Additional Challenges
+
+There are two additional challenges for extrapolating from outbreak data in which interventions were applied to making predictions about the broader population of outbreaks in which the intervention threshhold, $c$, may or may not have been crossed:
+
+1. **Deflated estimate of between-individual variance in $r_i$**: If $R_0 \le 1$, cases triggering intervention will likely come from the right tail of the distribution of individual infectiousness. If such cases are rare, they will be overrepresented in the outbreak data and cannot be assumed to be drawn i.i.d. from the distribution of individual infectionsness.
+
+2. **Inflated estimate of effective reproduction number, $R$**. If $R_0 \le 1$, the average infectiousness estimated in the course of an outbreak, $\hat{R_0}$ is likely to be greater than the true mean, $R_0$, across outbreaks. 
+
+This is not to say that the total variation in $\Delta R_0$ across outbreaks for pathogens with values of $R_0$ around one are necessarily attributable to this effect, but that this is an important alternative explanation that needs to be considered when making estimates of the impact of outbreak interventions.
+
+
+
+# Next Steps
+
+- Exploration of larger $c$ values.
+
+- Extension to SEIR model.
+
+- Estimates of bias in $R$ and $k$ obtained from outbreak-only data. 
+
+\clearpage
+
+# Figures & Tables
+
+```{r echo=FALSE, fig.cap = "Probability of observing outbreak sized > 10 cases within 14 days of introduction of index case.\\label{fig:poutbreak}"}
+readd(outbreak_g)
+```
+
+```{r echo=FALSE, fig.cap = "Proportion of $\\Delta R_0$ values that cross 1 in outbreaks > 10 cases. \\label{fig:pdrop}"}
+readd(drop_g)
+```
+
+```{r echo=FALSE, fig.cap = "Proportion of $\\Delta R$ values that cross 1 in outbreaks > 10 cases. \\label{fig:pdropreff}"}
+readd(drop_g_reff)
+```
+
+```{r echo=FALSE, fig.cap = "Proportion of $\\Delta R$ values that cross 1 in outbreaks > 10 cases that are attributable to susceptible depletion. \\label{fig:dropar}"}
+readd(drop_ar_g)
+```
+
+
+
+```{r echo=FALSE, fig.cap = "Average pre-intervention $R_0$ for outbreaks > 10 cases as a function of decreasing heterogeneity. \\label{fig:prer}"}
+readd(pre_g)
+```
+
+```{r echo=FALSE, fig.cap = "Average post-intervention $R_0$ for outbreaks > 10 cases as a function of increasing average infectiousness.\\label{fig:postr}"}
+readd(post_g)
+```
+
+
+# References

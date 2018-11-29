@@ -4,7 +4,10 @@ require(dplyr)
 require(ggplot2)
 
 ## Load data
-z <- readRDS("output/nov_model.Rds") %>% extract
+##z <- readRDS("output/nov_model.Rds") %>%
+## extract
+
+z <- readRDS("output/combined_values.Rds")
 
 daily_r <- z$daily_avg_r %>%
   apply(2, function(x) quantile(x, probs = c(0.1, 0.5, 0.9))) %>%

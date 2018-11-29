@@ -7,3 +7,4 @@ texout.txt
 *.log
 *.out
 .drake
+.#*

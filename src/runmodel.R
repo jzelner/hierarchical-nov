@@ -7,7 +7,9 @@ m <- stan("src/contact_model.stan",
           iter = 2000,
           warmup = 1000,
           chains = 1, 
-          control = list(adapt_delta = 0.90))
+          control = list(adapt_delta = 0.95,
+                         max_treedepth = 15))
 
 saveRDS(m, "output/nov_model.Rds")
+
 

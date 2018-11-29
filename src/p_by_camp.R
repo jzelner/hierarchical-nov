@@ -4,8 +4,16 @@ require(ggplot2)
 require(dplyr)
 
 z <- readRDS("output/infection_source.Rds")
-zz <- inner_join(z$cases_by_camp, z$by_camp)
 
+## Load combined outputs
+m <- readRDS("output/combined_values.Rds")
+
+pw_vals <- data.frame(t(apply(m$p_within, 2, function(x) quantile(x, probs = c(0.05, 0.5, 0.95)))))
+
+colnames(pw_vals) <- c("low_ci", "median", "high_ci")
+pw_vals$camp <- 1:nrow(pw_vals)
+
+zz <- inner_join(z$cases_by_camp, pw_vals)
 
 g <- ggplot(zz, aes(x=p_total, 
                     y = median, 

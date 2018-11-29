@@ -8,7 +8,6 @@ z <- readRDS("output/nov_model.Rds")
 z <- rstan::extract(z)
 
 ## Load input data
-
 d <- readRDS("output/nov_model_input.Rds")
 
 ## Make weights for time lags

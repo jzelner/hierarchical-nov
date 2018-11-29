@@ -1,0 +1,15 @@
+#---
+#name: Cruise data
+#schema:
+#  fields:
+#  - name: day
+#    type: integer
+#  - name: cases
+#    type: integer
+#  - name: sse
+#    type: integer
+#---
+day,cases,sse
+1,2,1
+2,1,2
+ 3,1,0

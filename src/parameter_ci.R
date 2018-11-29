@@ -4,7 +4,7 @@ require(readr)
 require(dplyr)
 require(ggplot2)
 
-z <- readRDS("output/nov_model.Rds") %>% extract
+z <- readRDS("output/combined_values.Rds") 
 
 analysis_pars <- c("zeta", "log_beta_mu", "gamma", "beta_shape")
 
@@ -18,8 +18,8 @@ for (p in analysis_pars) {
 par_ci <- all_pars %>%
   group_by(par) %>%
   summarize(median = median(x),
-            high_ci = quantile(x, probs = c(0.975)),
-            low_ci = quantile(x, probs = c(0.025))
+            high_ci = quantile(x, probs = c(0.95)),
+            low_ci = quantile(x, probs = c(0.05))
             )
 
 write_csv(par_ci, "output/scalar_pars.csv")

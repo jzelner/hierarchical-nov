@@ -18,20 +18,31 @@ output/nov_model.Rds : src/runmodel.R src/contact_model.stan output/nov_model_in
 	@mkdir -p $(@D)
 	./$<
 
+
 ###############################################################################
-## Post-processing
-output/figures/daily_avg_r.pdf : src/avg_r_plot.R output/nov_model.Rds
+## Setup for running multiple models for sensitivity
+output/random_model_runs.Rds : src/random_model_runs.R data/jamboree_data.csv data/jamboree_pop.csv src/contact_model.stan
 	@mkdir -p $(@D)
 	./$<
 
-output/scalar_pars.csv : src/parameter_ci.R output/nov_model.Rds
+output/combined_values.Rds : src/combine_outputs.R output/random_model_runs.Rds
 	@mkdir -p $(@D)
 	./$<
-	
+
+###############################################################################
+## Post-processing
+output/figures/daily_avg_r.pdf : src/avg_r_plot.R output/combined_values.Rds
+	@mkdir -p $(@D)
+	./$<
+
+output/scalar_pars.csv : src/parameter_ci.R output/combined_values.Rds
+	@mkdir -p $(@D)
+	./$<
+
 output/infection_source.Rds : src/inf_source.R output/nov_model.Rds output/nov_model_input.Rds
 	@mkdir -p $(@D)
 	./$<
-	
+
 output/figures/p_by_camp.pdf : src/p_by_camp.R output/infection_source.Rds
 	@mkdir -p $(@D)
 	./$<
